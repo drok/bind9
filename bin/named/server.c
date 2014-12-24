@@ -5653,15 +5653,6 @@ load_configuration(const char *filename, ns_server_t *server,
 		ns_os_changeuser();
 
 	/*
-	 * Check that the working directory is writable.
-	 */
-	if (access(".", W_OK) != 0) {
-		isc_log_write(ns_g_lctx, NS_LOGCATEGORY_GENERAL,
-			      NS_LOGMODULE_SERVER, ISC_LOG_ERROR,
-			      "the working directory is not writable");
-	}
-
-	/*
 	 * Configure the logging system.
 	 *
 	 * Do this after changing UID to make sure that any log
@@ -5719,6 +5710,15 @@ load_configuration(const char *filename, ns_server_t *server,
 			      NS_LOGMODULE_SERVER, ISC_LOG_DEBUG(1),
 			      "now using logging configuration from "
 			      "config file");
+	}
+
+	/*
+	 * Check that the working directory is writable.
+	 */
+	if (access(".", W_OK) != 0) {
+		isc_log_write(ns_g_lctx, NS_LOGCATEGORY_GENERAL,
+			      NS_LOGMODULE_SERVER, ISC_LOG_DEBUG(1),
+			      "the working directory is not writable");
 	}
 
 	/*
