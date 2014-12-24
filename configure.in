@@ -988,15 +988,16 @@ AC_ARG_WITH(pkcs11,
 case "$use_pkcs11" in
 	no|'')
 		AC_MSG_RESULT(disabled)
-		USE_PKCS11=''
 		PKCS11_TOOLS=''
 		;;
 	yes|*)
 		AC_MSG_RESULT(using OpenSSL with PKCS11 support)
-		USE_PKCS11='-DUSE_PKCS11'
 		PKCS11_TOOLS=pkcs11
 		;;
 esac
+# We don't want to automatically load engine because it needs to have openct,
+# opencryptoki and friends installed.
+USE_PKCS11=''
 AC_SUBST(USE_PKCS11)
 AC_SUBST(PKCS11_TOOLS)
 
