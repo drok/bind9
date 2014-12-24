@@ -61,16 +61,16 @@ typedef struct LDAP_INFO
 ldap_info;
 
 /* usage Info */
-void usage ();
+void usage (void);
 
 /* Add to the ldap dit */
 void add_ldap_values (ldap_info * ldinfo);
 
 /* Init an ldap connection */
-void init_ldap_conn ();
+void init_ldap_conn (void);
 
 /* Ldap error checking */
-void ldap_result_check (char *msg, char *dn, int err);
+void ldap_result_check (const char *msg, char *dn, int err);
 
 /* Put a hostname into a char ** array */
 char **hostname_to_dn_list (char *hostname, char *zone, unsigned int flags);
@@ -86,7 +86,7 @@ void add_to_rr_list (char *dn, char *name, char *type, char *data,
 		     unsigned int ttl, unsigned int flags);
 
 /* Error checking */
-void isc_result_check (isc_result_t res, char *errorstr);
+void isc_result_check (isc_result_t res, const char *errorstr);
 
 /* Generate LDIF Format files */
 void generate_ldap (dns_name_t * dnsname, dns_rdata_t * rdata,
@@ -95,11 +95,17 @@ void generate_ldap (dns_name_t * dnsname, dns_rdata_t * rdata,
 /* head pointer to the list */
 ldap_info *ldap_info_base = NULL;
 
+ldap_info *
+locate_by_dn (char *dn);
+void
+init_ldap_conn ();
+void usage();
+
 char *argzone, *ldapbase, *binddn, *bindpw = NULL;
-char *ldapsystem = "localhost";
-static char *objectClasses[] =
+const char *ldapsystem = "localhost";
+static const char *objectClasses[] =
   { "top", "dNSZone", NULL };
-static char *topObjectClasses[] = { "top", NULL };
+static const char *topObjectClasses[] = { "top", NULL };
 LDAP *conn;
 unsigned int debug = 0;
 
@@ -108,7 +114,7 @@ debug = 1;
 #endif
 
 int
-main (int *argc, char **argv)
+main (int argc, char **argv)
 {
   isc_mem_t *mctx = NULL;
   isc_entropy_t *ectx = NULL;
@@ -118,7 +124,7 @@ main (int *argc, char **argv)
   LDAPMod *base_attrs[2];
   LDAPMod base;
   isc_buffer_t buff;
-  char *zonefile;
+  char *zonefile=0L;
   char fullbasedn[1024];
   char *ctmp;
   dns_fixedname_t fixedzone, fixedname;
@@ -282,9 +288,9 @@ main (int *argc, char **argv)
 	  if ((*ctmp == ',') || (ctmp == &basedn[0]))
 	    {
 	      base.mod_op = LDAP_MOD_ADD;
-	      base.mod_type = "objectClass";
-	      base.mod_values = topObjectClasses;
-	      base_attrs[0] = &base;
+	      base.mod_type = (char*)"objectClass";
+	      base.mod_values = (char**)topObjectClasses;
+	      base_attrs[0] = (void*)&base;
 	      base_attrs[1] = NULL;
 
 	      if (ldapbase)
@@ -341,7 +347,7 @@ main (int *argc, char **argv)
  * I should probably rename this function, as not to cause any
  * confusion with the isc* routines. Will exit on error. */
 void
-isc_result_check (isc_result_t res, char *errorstr)
+isc_result_check (isc_result_t res, const char *errorstr)
 {
   if (res != ISC_R_SUCCESS)
     {
@@ -453,7 +459,7 @@ add_to_rr_list (char *dn, char *name, char *type,
 	  exit (-1);
 	}
 
-      for (i = 0; i < flags; i++)
+      for (i = 0; i < (int)flags; i++)
 	{
 	  tmp->attrs[i] = (LDAPMod *) malloc (sizeof (LDAPMod));
 	  if (tmp->attrs[i] == (LDAPMod *) NULL)
@@ -463,13 +469,13 @@ add_to_rr_list (char *dn, char *name, char *type,
 	    }
 	}
       tmp->attrs[0]->mod_op = LDAP_MOD_ADD;
-      tmp->attrs[0]->mod_type = "objectClass";
+      tmp->attrs[0]->mod_type = (char*)"objectClass";
 
       if (flags == DNS_OBJECT)
-	tmp->attrs[0]->mod_values = objectClasses;
+	tmp->attrs[0]->mod_values = (char**)objectClasses;
       else
 	{
-	  tmp->attrs[0]->mod_values = topObjectClasses;
+	  tmp->attrs[0]->mod_values = (char**)topObjectClasses;
 	  tmp->attrs[1] = NULL;
 	  tmp->attrcnt = 2;
 	  tmp->next = ldap_info_base;
@@ -478,7 +484,7 @@ add_to_rr_list (char *dn, char *name, char *type,
 	}
 
       tmp->attrs[1]->mod_op = LDAP_MOD_ADD;
-      tmp->attrs[1]->mod_type = "relativeDomainName";
+      tmp->attrs[1]->mod_type = (char*)"relativeDomainName";
       tmp->attrs[1]->mod_values = (char **) calloc (sizeof (char *), 2);
 
       if (tmp->attrs[1]->mod_values == (char **)NULL)
@@ -500,7 +506,7 @@ add_to_rr_list (char *dn, char *name, char *type,
       tmp->attrs[2]->mod_values[1] = NULL;
 
       tmp->attrs[3]->mod_op = LDAP_MOD_ADD;
-      tmp->attrs[3]->mod_type = "dNSTTL";
+      tmp->attrs[3]->mod_type = (char*)"dNSTTL";
       tmp->attrs[3]->mod_values = (char **) calloc (sizeof (char *), 2);
 
       if (tmp->attrs[3]->mod_values == (char **)NULL)
@@ -511,7 +517,7 @@ add_to_rr_list (char *dn, char *name, char *type,
       tmp->attrs[3]->mod_values[1] = NULL;
 
       tmp->attrs[4]->mod_op = LDAP_MOD_ADD;
-      tmp->attrs[4]->mod_type = "zoneName";
+      tmp->attrs[4]->mod_type = (char*)"zoneName";
       tmp->attrs[4]->mod_values = (char **)calloc(sizeof(char *), 2);
       tmp->attrs[4]->mod_values[0] = gbl_zone;
       tmp->attrs[4]->mod_values[1] = NULL;
@@ -611,7 +617,7 @@ hostname_to_dn_list (char *hostname, char *zone, unsigned int flags)
 	  zname = ++tmp;
 	}
       else
-	hnamebuff = "@";
+	hnamebuff = (char*)"@";
     }
   else
     {
@@ -690,12 +696,12 @@ init_ldap_conn ()
     }
 
   result = ldap_simple_bind_s (conn, binddn, bindpw);
-  ldap_result_check ("ldap_simple_bind_s", "LDAP Bind", result);
+  ldap_result_check ("ldap_simple_bind_s", (char*)"LDAP Bind", result);
 }
 
 /* Like isc_result_check, only for LDAP */
 void
-ldap_result_check (char *msg, char *dn, int err)
+ldap_result_check (const char *msg, char *dn, int err)
 {
   if ((err != LDAP_SUCCESS) && (err != LDAP_ALREADY_EXISTS))
     {
@@ -734,5 +740,8 @@ void
 usage ()
 {
   fprintf (stderr,
-	   "zone2ldap -D [BIND DN] -w [BIND PASSWORD] -b [BASE DN] -z [ZONE] -f [ZONE FILE] -h [LDAP HOST]
-	   [-c Create LDAP Base structure][-d Debug Output (lots !)] \n ");}
+	   "zone2ldap -D [BIND DN] -w [BIND PASSWORD] -b [BASE DN] -z [ZONE] -f [ZONE FILE] -h [LDAP HOST]\n"
+	   "\t[-c Create LDAP Base structure][-d Debug Output (lots !)]\n "
+          );
+}
+

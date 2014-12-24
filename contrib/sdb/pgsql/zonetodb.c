@@ -37,7 +37,7 @@
 #include <dns/rdatatype.h>
 #include <dns/result.h>
 
-#include <pgsql/libpq-fe.h>
+#include <libpq-fe.h>
 
 /*
  * Generate a PostgreSQL table from a zone.
@@ -54,11 +54,17 @@ char *dbname, *dbtable;
 char str[10240];
 
 void
+closeandexit(int status);
+
+void
 closeandexit(int status) {
 	if (conn != NULL)
 		PQfinish(conn);
 	exit(status);
 }
+
+void
+check_result(isc_result_t result, const char *message);
 
 void
 check_result(isc_result_t result, const char *message) {
@@ -84,7 +90,8 @@ quotestring(const char *source, char *dest) {
 	}
 	*dest++ = 0;
 }
-
+void
+addrdata(dns_name_t *name, dns_ttl_t ttl, dns_rdata_t *rdata);
 void
 addrdata(dns_name_t *name, dns_ttl_t ttl, dns_rdata_t *rdata) {
 	unsigned char namearray[DNS_NAME_MAXTEXT + 1];

@@ -43,7 +43,7 @@
 #include <dns/lib.h>
 #include <dns/ttl.h>
 
-#include <named/bdb.h>
+#include "bdb.h"
 #include <named/globals.h>
 #include <named/config.h>
 

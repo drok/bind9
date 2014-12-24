@@ -23,7 +23,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include <pgsql/libpq-fe.h>
+#include <libpq-fe.h>
 
 #include <isc/mem.h>
 #include <isc/print.h>
