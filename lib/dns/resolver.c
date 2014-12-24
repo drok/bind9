@@ -1139,7 +1139,7 @@ log_edns(fetchctx_t *fctx) {
 	 */
 	dns_name_format(&fctx->domain, domainbuf, sizeof(domainbuf));
 	isc_log_write(dns_lctx, DNS_LOGCATEGORY_EDNS_DISABLED,
-		      DNS_LOGMODULE_RESOLVER, ISC_LOG_INFO,
+		      DNS_LOGMODULE_RESOLVER, ISC_LOG_DEBUG(1),
 		      "success resolving '%s' (in '%s'?) after %s",
 		      fctx->info, domainbuf, fctx->reason);
 
@@ -3807,7 +3807,7 @@ log_lame(fetchctx_t *fctx, dns_adbaddrinfo_t *addrinfo) {
 	dns_name_format(&fctx->domain, domainbuf, sizeof(domainbuf));
 	isc_sockaddr_format(&addrinfo->sockaddr, addrbuf, sizeof(addrbuf));
 	isc_log_write(dns_lctx, DNS_LOGCATEGORY_LAME_SERVERS,
-		      DNS_LOGMODULE_RESOLVER, ISC_LOG_INFO,
+		      DNS_LOGMODULE_RESOLVER, ISC_LOG_DEBUG(1),
 		      "lame server resolving '%s' (in '%s'?): %s",
 		      namebuf, domainbuf, addrbuf);
 }
@@ -3834,7 +3834,7 @@ log_formerr(fetchctx_t *fctx, const char *format, ...) {
 	}
 
 	isc_log_write(dns_lctx, DNS_LOGCATEGORY_RESOLVER,
-		      DNS_LOGMODULE_RESOLVER, ISC_LOG_NOTICE,
+		      DNS_LOGMODULE_RESOLVER, ISC_LOG_DEBUG(1),
 		      "DNS format error from %s resolving %s%s%s: %s",
 		      nsbuf, fctx->info, clmsg, clbuf, msgbuf);
 }
