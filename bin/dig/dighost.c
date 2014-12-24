@@ -2787,8 +2787,13 @@ connect_timeout(isc_task_t *task, isc_event_t *event) {
 		}
 	} else {
 		fputs(l->cmdline, stdout);
-		printf(";; connection timed out; no servers could be "
-		       "reached\n");
+		if (!next_origin(ISC_LIST_HEAD(l->q))) {
+			printf(";; connection timed out; no servers could be "
+			       "reached\n");
+		} else {
+			printf(";; connection timed out; trying next "
+			       "origin\n");
+		}
 		cancel_lookup(l);
 		check_next_lookup(l);
 		if (exitcode < 9)
@@ -3449,7 +3454,8 @@ recv_done(isc_task_t *task, isc_event_t *event) {
 		return;
 	}
 	if ((msg->rcode == dns_rcode_servfail && !l->servfail_stops) ||
-	    (check_ra && (msg->flags & DNS_MESSAGEFLAG_RA) == 0 && l->recurse))
+	    (check_ra && (msg->flags & DNS_MESSAGEFLAG_RA) == 0 &&
+	     msg->rcode != dns_rcode_noerror && l->recurse))
 	{
 		dig_query_t *next = ISC_LIST_NEXT(query, link);
 		if (l->current_query == query)
