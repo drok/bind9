@@ -2915,6 +2915,10 @@ if test "$use_atomic" = "yes"; then
 	AC_MSG_RESULT($arch)
 fi
 
+if test ! "$arch" = "x86_64" -a "$have_xaddq" = "yes"; then
+	AC_MSG_ERROR([XADDQ present but disabled by Fedora patch!])
+fi
+
 if test "$have_atomic" = "yes"; then
 	AC_MSG_CHECKING([compiler support for inline assembly code])
 
