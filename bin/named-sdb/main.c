@@ -85,6 +85,7 @@
 /* #include "xxdb.h" */
 #include "ldapdb.h"
 #include "pgsqldb.h"
+#include "sqlitedb.h"
 #include "dirdb.h"
 
 #ifdef CONTRIB_DLZ
@@ -837,6 +838,7 @@ setup(void) {
 
 	ldapdb_clear();
 	pgsqldb_clear();
+	sqlitedb_clear();
 	dirdb_clear();
 
 	isc_log_write(ns_g_lctx, NS_LOGCATEGORY_GENERAL, NS_LOGMODULE_MAIN,
@@ -985,6 +987,23 @@ setup(void) {
                           ISC_LOG_NOTICE, "SDB postgreSQL DB zone database module loaded."
                          );
 
+        result = sqlitedb_init();
+        if (result != ISC_R_SUCCESS)
+        {
+             isc_log_write(ns_g_lctx, NS_LOGCATEGORY_GENERAL, NS_LOGMODULE_MAIN,
+                          ISC_LOG_ERROR, 
+                          "SDB sqlite3 module initialisation failed: %s.",
+                          isc_result_totext(result)
+                );
+            isc_log_write(ns_g_lctx, NS_LOGCATEGORY_GENERAL, NS_LOGMODULE_MAIN,
+                          ISC_LOG_ERROR, 
+                          "SDB sqlite3 zone database will be unavailable."
+                );
+        }else
+            isc_log_write(ns_g_lctx, NS_LOGCATEGORY_GENERAL, NS_LOGMODULE_MAIN,
+                          ISC_LOG_NOTICE, "SDB sqlite3 DB zone database module loaded."
+                         );
+
         result = dirdb_init();
         if (result != ISC_R_SUCCESS)
         {
@@ -1035,6 +1054,7 @@ cleanup(void) {
 
         ldapdb_clear();
         pgsqldb_clear();
+        sqlitedb_clear();
         dirdb_clear();
 
 	isc_log_write(ns_g_lctx, NS_LOGCATEGORY_GENERAL, NS_LOGMODULE_MAIN,

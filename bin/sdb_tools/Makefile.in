@@ -32,11 +32,11 @@ DEPLIBS =	${LWRESDEPLIBS} ${DNSDEPLIBS} ${BIND9DEPLIBS} \
 LIBS =		${LWRESLIBS} ${DNSLIBS} ${BIND9LIBS} \
 		${ISCCFGLIBS} ${ISCCCLIBS} ${ISCLIBS} ${DBDRIVER_LIBS} @LIBS@
 
-TARGETS =	zone2ldap@EXEEXT@ ldap2zone@EXEEXT@ zonetodb@EXEEXT@
+TARGETS =	zone2ldap@EXEEXT@ ldap2zone@EXEEXT@ zonetodb@EXEEXT@ zone2sqlite@EXEEXT@
 
-OBJS	=	zone2ldap.@O@ ldap2zone.@O@ zonetodb.@O@
+OBJS	=	zone2ldap.@O@ ldap2zone.@O@ zonetodb.@O@ zone2sqlite.@O@
 
-SRCS    =       zone2ldap.c ldap2zone.c zonetodb.c
+SRCS    =       zone2ldap.c ldap2zone.c zonetodb.c zone2sqlite.c
 
 MANPAGES =      zone2ldap.1
 
@@ -49,6 +49,9 @@ zone2ldap@EXEEXT@: zone2ldap.@O@ ${DEPLIBS}
 
 zonetodb@EXEEXT@: zonetodb.@O@  ${DEPLIBS}
 	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ zonetodb.@O@ -lpq ${LIBS}
+
+zone2sqlite@EXEEXT@: zone2sqlite.@O@  ${DEPLIBS}
+	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${ALL_CFLAGS} ${LDFLAGS} -o $@ zone2sqlite.@O@ -lsqlite3 -lssl ${LIBS}
 
 ldap2zone@EXEEXT@: ldap2zone.@O@ ${DEPLIBS}
 	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${ALL_CFLAGS} ${LDFLAGS} -o $@ ldap2zone.@O@ -lldap -llber ${LIBS}
@@ -64,4 +67,5 @@ install:: ${TARGETS} installdirs
 	${LIBTOOL_MODE_INSTALL} ${INSTALL_PROGRAM} zone2ldap@EXEEXT@ ${DESTDIR}${sbindir}
 	${LIBTOOL_MODE_INSTALL} ${INSTALL_PROGRAM} ldap2zone@EXEEXT@ ${DESTDIR}${sbindir}
 	${LIBTOOL_MODE_INSTALL} ${INSTALL_PROGRAM} zonetodb@EXEEXT@  ${DESTDIR}${sbindir}
+	${LIBTOOL_MODE_INSTALL} ${INSTALL_PROGRAM} zone2sqlite@EXEEXT@  ${DESTDIR}${sbindir}
 	${INSTALL_DATA} ${srcdir}/zone2ldap.1 ${DESTDIR}${mandir}/man1/zone2ldap.1

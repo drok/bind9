@@ -34,10 +34,10 @@ top_srcdir =	@top_srcdir@
 #
 # Add database drivers here.
 #
-DBDRIVER_OBJS =	ldapdb.@O@ pgsqldb.@O@ dirdb.@O@
-DBDRIVER_SRCS =	ldapdb.c pgsqldb.c dirdb.c
+DBDRIVER_OBJS =	ldapdb.@O@ pgsqldb.@O@ sqlitedb.@O@ dirdb.@O@
+DBDRIVER_SRCS =	ldapdb.c pgsqldb.c sqlitedb.c dirdb.c
 DBDRIVER_INCLUDES =
-DBDRIVER_LIBS =	-lldap -llber -lpq
+DBDRIVER_LIBS =	-lldap -llber -lpq -lsqlite3
 
 DLZ_DRIVER_DIR =	${top_srcdir}/contrib/dlz/drivers
 
