@@ -25,6 +25,7 @@
 /* Using LDAPv3 by default, change this if you want v2 */
 #ifndef LDAPDB_LDAP_VERSION
 #define LDAPDB_LDAP_VERSION 3
+#define LDAP_DEPRECATED 1
 #endif
 
 #include <config.h>

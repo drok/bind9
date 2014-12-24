@@ -13,6 +13,8 @@
  * ditched dNSDomain2 schema support. Version 0.3-ALPHA
  */
 
+#define LDAP_DEPRECATED 1
+
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
