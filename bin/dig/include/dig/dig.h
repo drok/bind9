@@ -282,6 +282,7 @@ extern isc_boolean_t keep_open;
 extern char *progname;
 extern int tries;
 extern int fatalexit;
+extern isc_boolean_t verbose;
 #ifdef WITH_IDN
 extern int idnoptions;
 #endif
