@@ -51,7 +51,7 @@ CINCLUDES =	-I${srcdir}/include -I${srcdir}/unix/include -I. \
 		${ISCCFG_INCLUDES} ${ISCCC_INCLUDES} ${ISC_INCLUDES} \
 		${DLZDRIVER_INCLUDES} ${DBDRIVER_INCLUDES} @DST_OPENSSL_INC@
 
-CDEFINES =      @CONTRIB_DLZ@ @USE_PKCS11@ @USE_OPENSSL@
+CDEFINES =      @USE_PKCS11@ @USE_OPENSSL@
 
 CWARNINGS =
 
@@ -75,11 +75,11 @@ DEPLIBS =	${LWRESDEPLIBS} ${DNSDEPLIBS} ${BIND9DEPLIBS} \
 
 LIBS =		${LWRESLIBS} ${DNSLIBS} ${BIND9LIBS} \
 		${ISCCFGLIBS} ${ISCCCLIBS} ${ISCLIBS} \
-		${DLZDRIVER_LIBS} ${DBDRIVER_LIBS} @LIBS@
+		@LIBS@
 
 NOSYMLIBS =	${LWRESLIBS} ${DNSLIBS} ${BIND9LIBS} \
 		${ISCCFGLIBS} ${ISCCCLIBS} ${ISCNOSYMLIBS} \
-		${DLZDRIVER_LIBS} ${DBDRIVER_LIBS} @LIBS@
+		@LIBS@
 
 SUBDIRS =	unix
 
@@ -92,8 +92,7 @@ OBJS =		builtin.@O@ client.@O@ config.@O@ control.@O@ \
 		tkeyconf.@O@ tsigconf.@O@ update.@O@ xfrout.@O@ \
 		zoneconf.@O@ \
 		lwaddr.@O@ lwresd.@O@ lwdclient.@O@ lwderror.@O@ lwdgabn.@O@ \
-		lwdgnba.@O@ lwdgrbn.@O@ lwdnoop.@O@ lwsearch.@O@ \
-		${DLZDRIVER_OBJS} ${DBDRIVER_OBJS}
+		lwdgnba.@O@ lwdgrbn.@O@ lwdnoop.@O@ lwsearch.@O@
 
 UOBJS =		unix/os.@O@ unix/dlz_dlopen_driver.@O@
 
@@ -106,8 +105,7 @@ SRCS =		builtin.c client.c config.c control.c \
 		tkeyconf.c tsigconf.c update.c xfrout.c \
 		zoneconf.c \
 		lwaddr.c lwresd.c lwdclient.c lwderror.c lwdgabn.c \
-		lwdgnba.c lwdgrbn.c lwdnoop.c lwsearch.c \
-		${DLZDRIVER_SRCS} ${DBDRIVER_SRCS}
+		lwdgnba.c lwdgrbn.c lwdnoop.c lwsearch.c
 
 MANPAGES =	named.8 lwresd.8 named.conf.5
 
@@ -183,8 +181,6 @@ install:: named@EXEEXT@ lwresd@EXEEXT@ installdirs
 	${INSTALL_DATA} ${srcdir}/named.8 ${DESTDIR}${mandir}/man8
 	${INSTALL_DATA} ${srcdir}/lwresd.8 ${DESTDIR}${mandir}/man8
 	${INSTALL_DATA} ${srcdir}/named.conf.5 ${DESTDIR}${mandir}/man5
-
-@DLZ_DRIVER_RULES@
 
 named-symtbl.@O@: named-symtbl.c
 	${LIBTOOL_MODE_COMPILE} ${CC} ${ALL_CFLAGS} -c named-symtbl.c

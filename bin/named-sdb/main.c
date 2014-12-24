@@ -83,6 +83,9 @@
  * Include header files for database drivers here.
  */
 /* #include "xxdb.h" */
+#include "ldapdb.h"
+#include "pgsqldb.h"
+#include "dirdb.h"
 
 #ifdef CONTRIB_DLZ
 /*
@@ -832,6 +835,10 @@ setup(void) {
 		ns_main_earlyfatal("isc_app_start() failed: %s",
 				   isc_result_totext(result));
 
+	ldapdb_clear();
+	pgsqldb_clear();
+	dirdb_clear();
+
 	isc_log_write(ns_g_lctx, NS_LOGCATEGORY_GENERAL, NS_LOGMODULE_MAIN,
 		      ISC_LOG_NOTICE, "starting %s %s%s", ns_g_product,
 		      ns_g_version, saved_command_line);
@@ -944,6 +951,57 @@ setup(void) {
 				   isc_result_totext(result));
 #endif
 
+        result = ldapdb_init();
+        if (result != ISC_R_SUCCESS)
+        {
+            isc_log_write(ns_g_lctx, NS_LOGCATEGORY_GENERAL, NS_LOGMODULE_MAIN,
+                          ISC_LOG_ERROR, 
+                          "SDB ldap module initialisation failed: %s.",
+                          isc_result_totext(result)
+                );
+            isc_log_write(ns_g_lctx, NS_LOGCATEGORY_GENERAL, NS_LOGMODULE_MAIN,
+                          ISC_LOG_ERROR, 
+                          "SDB ldap zone database will be unavailable."
+                );
+        }else
+            isc_log_write(ns_g_lctx, NS_LOGCATEGORY_GENERAL, NS_LOGMODULE_MAIN,
+                          ISC_LOG_NOTICE, "SDB ldap zone database module loaded."
+                         );
+
+        result = pgsqldb_init();
+        if (result != ISC_R_SUCCESS)
+        {
+            isc_log_write(ns_g_lctx, NS_LOGCATEGORY_GENERAL, NS_LOGMODULE_MAIN,
+                          ISC_LOG_ERROR, 
+                          "SDB pgsql module initialisation failed: %s.",
+                          isc_result_totext(result)
+                );
+            isc_log_write(ns_g_lctx, NS_LOGCATEGORY_GENERAL, NS_LOGMODULE_MAIN,
+                          ISC_LOG_ERROR, 
+                          "SDB pgsql zone database will be unavailable."
+                );
+        }else
+            isc_log_write(ns_g_lctx, NS_LOGCATEGORY_GENERAL, NS_LOGMODULE_MAIN,
+                          ISC_LOG_NOTICE, "SDB postgreSQL DB zone database module loaded."
+                         );
+
+        result = dirdb_init();
+        if (result != ISC_R_SUCCESS)
+        {
+            isc_log_write(ns_g_lctx, NS_LOGCATEGORY_GENERAL, NS_LOGMODULE_MAIN,
+                          ISC_LOG_ERROR, 
+                          "SDB directory DB module initialisation failed: %s.",
+                          isc_result_totext(result)
+                );
+            isc_log_write(ns_g_lctx, NS_LOGCATEGORY_GENERAL, NS_LOGMODULE_MAIN,
+                          ISC_LOG_ERROR, 
+                          "SDB directory DB zone database will be unavailable."
+                );
+        }else
+            isc_log_write(ns_g_lctx, NS_LOGCATEGORY_GENERAL, NS_LOGMODULE_MAIN,
+                          ISC_LOG_NOTICE, "SDB directory DB zone database module loaded."
+                         );
+
 	ns_server_create(ns_g_mctx, &ns_g_server);
 }
 
@@ -974,6 +1032,10 @@ cleanup(void) {
 #endif
 
 	dns_name_destroy();
+
+        ldapdb_clear();
+        pgsqldb_clear();
+        dirdb_clear();
 
 	isc_log_write(ns_g_lctx, NS_LOGCATEGORY_GENERAL, NS_LOGMODULE_MAIN,
 		      ISC_LOG_NOTICE, "exiting");

@@ -3729,12 +3729,15 @@ AC_CONFIG_FILES([
 	bin/dnssec/Makefile
 	bin/named/Makefile
 	bin/named/unix/Makefile
+	bin/named-sdb/Makefile
+	bin/named-sdb/unix/Makefile
 	bin/nsupdate/Makefile
 	bin/pkcs11/Makefile
 	bin/python/Makefile
 	bin/python/dnssec-checkds.py
 	bin/python/dnssec-coverage.py
 	bin/rndc/Makefile
+	bin/sdb_tools/Makefile
 	bin/tests/Makefile
 	bin/tests/atomic/Makefile
 	bin/tests/db/Makefile
