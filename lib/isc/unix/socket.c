@@ -57,6 +57,20 @@
 #include <isc/util.h>
 #include <isc/xml.h>
 
+/* See task.c about the following definition: */
+#ifdef BIND9
+#ifdef ISC_PLATFORM_USETHREADS
+#define USE_WATCHER_THREAD
+#else
+#define USE_SHARED_MANAGER
+#endif	/* ISC_PLATFORM_USETHREADS */
+#else /* BIND9 */
+#undef ISC_PLATFORM_HAVESYSUNH
+#undef ISC_PLATFORM_HAVEKQUEUE
+#undef ISC_PLATFORM_HAVEEPOLL
+#undef ISC_PLATFORM_HAVEDEVPOLL
+#endif	/* BIND9 */
+
 #ifdef ISC_PLATFORM_HAVESYSUNH
 #include <sys/un.h>
 #endif
@@ -75,15 +89,6 @@
 #endif
 
 #include "errno2result.h"
-
-/* See task.c about the following definition: */
-#ifdef BIND9
-#ifdef ISC_PLATFORM_USETHREADS
-#define USE_WATCHER_THREAD
-#else
-#define USE_SHARED_MANAGER
-#endif	/* ISC_PLATFORM_USETHREADS */
-#endif	/* BIND9 */
 
 #ifndef USE_WATCHER_THREAD
 #include "socket_p.h"
