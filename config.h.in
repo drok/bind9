@@ -434,7 +434,7 @@ int sigwait(const unsigned int *set, int *sig);
 #undef PORT_NONBLOCK
 
 /* The size of `void *', as computed by sizeof. */
-#undef SIZEOF_VOID_P
+/* #undef SIZEOF_VOID_P */
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS

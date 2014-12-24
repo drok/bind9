@@ -2314,7 +2314,9 @@ int getnameinfo(const struct sockaddr *, socklen_t, char *,
                 size_t, char *, size_t, int);],
 [ return (0);],
 	[AC_MSG_RESULT(size_t for buflen; int for flags)
-	 AC_DEFINE(IRS_GETNAMEINFO_BUFLEN_T, size_t)
+	# Changed to solve multilib conflict on Fedora 
+	#AC_DEFINE(IRS_GETNAMEINFO_BUFLEN_T, size_t)
+	 AC_DEFINE(IRS_GETNAMEINFO_BUFLEN_T, socklen_t)
 	 AC_DEFINE(IRS_GETNAMEINFO_FLAGS_T, int)],
 [AC_MSG_RESULT(not match any subspecies; assume standard definition)
 AC_DEFINE(IRS_GETNAMEINFO_BUFLEN_T, socklen_t)
