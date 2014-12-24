@@ -1501,6 +1501,12 @@ clear_query(dig_query_t *query) {
 
 	debug("clear_query(%p)", query);
 
+	if (query->waiting_senddone) {
+		debug("send_done not yet called");
+		query->pending_free = ISC_TRUE;
+		return;
+	}
+
 	lookup = query->lookup;
 
 	if (lookup->current_query == query)
@@ -1526,10 +1532,7 @@ clear_query(dig_query_t *query) {
 	isc_mempool_put(commctx, query->recvspace);
 	isc_buffer_invalidate(&query->recvbuf);
 	isc_buffer_invalidate(&query->lengthbuf);
-	if (query->waiting_senddone)
-		query->pending_free = ISC_TRUE;
-	else
-		isc_mem_free(mctx, query);
+	isc_mem_free(mctx, query);
 }
 
 /*%
@@ -2447,9 +2450,9 @@ send_done(isc_task_t *_task, isc_event_t *event) {
 	isc_event_free(&event);
 
 	if (query->pending_free)
-		isc_mem_free(mctx, query);
+		clear_query(query);
 
-	check_if_done();
+	check_next_lookup(l);
 	UNLOCK_LOOKUP;
 }
 
