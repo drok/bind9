@@ -115,7 +115,11 @@ HTMLPAGES =	named.html lwresd.html named.conf.html
 
 MANOBJS =	${MANPAGES} ${HTMLPAGES}
 
+EXT_CFLAGS = -fpie
+
 @BIND9_MAKE_RULES@
+
+LDFLAGS += -pie -Wl,-z,relro,-z,now,-z,nodlopen,-z,noexecstack
 
 main.@O@: main.c
 	${LIBTOOL_MODE_COMPILE} ${CC} ${ALL_CFLAGS} \

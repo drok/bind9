@@ -19,6 +19,8 @@ srcdir =	@srcdir@
 VPATH =		@srcdir@
 top_srcdir =	@top_srcdir@
 
+EXT_CFLAGS = -fpie
+
 @BIND9_MAKE_INCLUDES@
 
 CINCLUDES =	-I${srcdir}/include -I${srcdir}/../include \
