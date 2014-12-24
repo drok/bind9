@@ -978,6 +978,40 @@ dig +qr www.isc.org any -x 127.0.0.1 isc.org ns +noqr
   </refsect1>
 
   <refsect1>
+    <title>RETURN CODES</title>
+    <para>
+      <command>Dig</command> return codes are:
+      <variablelist>
+        <varlistentry>
+          <listitem>
+            <para>0: Everything went well, including things like NXDOMAIN</para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <listitem>
+            <para>1: Usage error</para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <listitem>
+            <para>8: Couldn't open batch file</para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <listitem>
+            <para>9: No reply from server</para>
+          </listitem>
+        </varlistentry>
+        <varlistentry>
+          <listitem>
+            <para>10: Internal error</para>
+          </listitem>
+        </varlistentry>
+      </variablelist>
+    </para>
+  </refsect1>
+
+  <refsect1>
     <title>FILES</title>
     <para><filename>/etc/resolv.conf</filename>
     </para>
