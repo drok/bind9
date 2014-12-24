@@ -425,17 +425,14 @@ isc_lex_gettoken(isc_lex_t *lex, unsigned int options, isc_token_t *tokenp) {
 			if (source->is_file) {
 				stream = source->input;
 
-#if defined(HAVE_FLOCKFILE) && defined(HAVE_GETCUNLOCKED)
-				c = getc_unlocked(stream);
-#else
-				c = getc(stream);
-#endif
-				if (c == EOF) {
-					if (ferror(stream)) {
-						source->result = ISC_R_IOERROR;
-						result = source->result;
+				result = isc_stdio_fgetc(stream, &c);
+
+				if (result != ISC_R_SUCCESS) {
+					if (result != ISC_R_EOF) {
+						source->result = result;
 						goto done;
 					}
+
 					source->at_eof = ISC_TRUE;
 				}
 			} else {

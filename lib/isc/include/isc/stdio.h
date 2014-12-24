@@ -76,6 +76,9 @@ isc_stdio_sync(FILE *f);
  * direct counterpart in the stdio library.
  */
 
+isc_result_t
+isc_stdio_fgetc(FILE *f, int *ret);
+
 ISC_LANG_ENDDECLS
 
 #endif /* ISC_STDIO_H */

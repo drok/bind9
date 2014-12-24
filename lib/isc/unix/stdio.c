@@ -142,3 +142,22 @@ isc_stdio_sync(FILE *f) {
 		return (isc__errno2result(errno));
 }
 
+isc_result_t
+isc_stdio_fgetc(FILE *f, int *ret) {
+	int r;
+	isc_result_t result = ISC_R_SUCCESS;
+
+#if defined(HAVE_FLOCKFILE) && defined(HAVE_GETCUNLOCKED)
+	r = fgetc_unlocked(f);
+#else
+	r = fgets(f);
+#endif
+
+	if (r == EOF)
+		result = ferror(f) ? isc__errno2result(errno) : ISC_R_EOF;
+
+	*ret = r;
+
+	return result;
+}
+

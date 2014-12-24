@@ -43,6 +43,7 @@ isc___errno2result(int posixerrno, const char *file, unsigned int line) {
 	case EINVAL:		/* XXX sometimes this is not for files */
 	case ENAMETOOLONG:
 	case EBADF:
+	case EISDIR:
 		return (ISC_R_INVALIDFILE);
 	case ENOENT:
 		return (ISC_R_FILENOTFOUND);
