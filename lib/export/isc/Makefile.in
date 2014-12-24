@@ -103,6 +103,10 @@ SRCS =		@ISC_EXTRA_SRCS@ \
 
 LIBS =		@LIBS@
 
+# Note: the order of SUBDIRS is important.
+# Attempt to disable parallel processing.
+.NOTPARALLEL:
+.NO_PARALLEL:
 SUBDIRS =	include unix nls @ISC_THREAD_DIR@
 TARGETS =	timestamp
 
@@ -116,26 +120,26 @@ version.@O@: ${srcdir}/version.c
 		-DLIBAGE=${LIBAGE} \
 		-c ${srcdir}/version.c
 
-libisc.@SA@: ${OBJS}
+libisc-export.@SA@: ${OBJS}
 	${AR} ${ARFLAGS} $@ ${OBJS}
 	${RANLIB} $@
 
-libisc.la: ${OBJS}
+libisc-export.la: ${OBJS}
 	${LIBTOOL_MODE_LINK} \
-		${CC} ${ALL_CFLAGS} ${LDFLAGS} -o libisc.la \
+		${CC} ${ALL_CFLAGS} ${LDFLAGS} -o libisc-export.la \
 		-rpath ${export_libdir} \
 		-version-info ${LIBINTERFACE}:${LIBREVISION}:${LIBAGE} \
 		${OBJS} ${LIBS}
 
-timestamp: libisc.@A@
+timestamp: libisc-export.@A@
 	touch timestamp
 
 installdirs:
 	$(SHELL) ${top_srcdir}/mkinstalldirs ${DESTDIR}${export_libdir}
 
 install:: timestamp installdirs
-	${LIBTOOL_MODE_INSTALL} ${INSTALL_DATA} libisc.@A@ \
+	${LIBTOOL_MODE_INSTALL} ${INSTALL_PROGRAM} libisc-export.@A@ \
 	${DESTDIR}${export_libdir}
 
 clean distclean::
-	rm -f libisc.@A@ libisc.la timestamp
+	rm -f libisc-export.@A@ libisc-export.la timestamp

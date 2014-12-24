@@ -31,15 +31,15 @@ CINCLUDES =	-I${srcdir}/include -I../dns/include \
 CDEFINES =
 CWARNINGS =
 
-DNSLIBS =	../dns/libdns.@A@ @DNS_CRYPTO_LIBS@
-ISCLIBS =	../isc/libisc.@A@
-ISCCFGLIBS =	../isccfg/libisccfg.@A@
-IRSLIBS =	../irs/libirs.@A@
+DNSLIBS =	../dns/libdns-export.@A@ @DNS_CRYPTO_LIBS@
+ISCLIBS =	../isc/libisc-export.@A@
+ISCCFGLIBS =	../isccfg/libisccfg-export.@A@
+IRSLIBS =	../irs/libirs-export.@A@
 
-DNSDEPLIBS =	../dns/libdns.@A@
-ISCDEPLIBS =	../isc/libisc.@A@
-ISCCFGDEPLIBS =	../isccfg/libisccfg.@A@
-IRSDEPLIBS =	../irs/libirs.@A@
+DNSDEPLIBS =	../dns/libdns-export.@A@
+ISCDEPLIBS =	../isc/libisc-export.@A@
+ISCCFGDEPLIBS =	../isccfg/libisccfg-export.@A@
+IRSDEPLIBS =	../irs/libirs-export.@A@
 
 DEPLIBS =	${DNSDEPLIBS} ${ISCCFGDEPLIBS} ${ISCDEPLIBS}
 
