@@ -613,6 +613,10 @@ lwres_conf_parse(lwres_context_t *ctx, const char *filename) {
 			break;
 		}
 
+		/* Ignore options with no parameters */
+		if (stopchar == '\n')
+			continue;
+
 		if (strlen(word) == 0U)
 			rval = LWRES_R_SUCCESS;
 		else if (strcmp(word, "nameserver") == 0)
