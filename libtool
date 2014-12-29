@@ -47,10 +47,10 @@ macro_revision=1.3337
 build_libtool_libs=yes
 
 # Whether or not to build static libraries.
-build_old_libs=yes
+build_old_libs=no
 
 # What type of objects to build.
-pic_mode=default
+pic_mode=yes
 
 # Whether or not to optimize for fast installation.
 fast_install=yes
@@ -65,13 +65,13 @@ ECHO="printf %s\\n"
 PATH_SEPARATOR=":"
 
 # The host system.
-host_alias=
-host=i686-pc-linux-gnu
+host_alias=i686-redhat-linux-gnu
+host=i686-redhat-linux-gnu
 host_os=linux-gnu
 
 # The build system.
-build_alias=
-build=i686-pc-linux-gnu
+build_alias=i686-redhat-linux-gnu
+build=i686-redhat-linux-gnu
 build_os=linux-gnu
 
 # A sed program that does not truncate output.
@@ -399,7 +399,7 @@ hardcode_automatic=no
 inherit_rpath=no
 
 # Whether libtool must link a program against all its dependency libraries.
-link_all_deplibs=unknown
+link_all_deplibs=no
 
 # Set to "yes" if exported symbols are required.
 always_export_symbols=no
