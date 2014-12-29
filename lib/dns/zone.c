@@ -40,6 +40,8 @@
 #include <isc/thread.h>
 #include <isc/timer.h>
 #include <isc/util.h>
+#  define USE_VALGRIND_MEMCHECK
+
 
 #include <dns/acache.h>
 #include <dns/acl.h>
@@ -802,6 +804,36 @@ inc_stats(dns_zone_t *zone, isc_statscounter_t counter) {
 /***
  ***	Public functions.
  ***/
+static void
+zone_print_timers(dns_zone_t *zone, isc_time_t *now, const char *file, unsigned int line, const char *fn)
+{
+	char nowbuf[80],
+	signbuf[80],
+	resignbuf[80],
+	nsec3buf[80],
+	refreshkeybuf[80],
+	warnbuf[80];
+	isc_time_t local_now;
+
+	if (now == NULL) {
+		now=&local_now;
+		TIME_NOW(now);
+	}
+	isc_time_formattimestamp(now, nowbuf, sizeof(nowbuf));
+	isc_time_formattimestamp(&zone->signingtime, signbuf, sizeof(signbuf));
+	isc_time_formattimestamp(&zone->resigntime, resignbuf, sizeof(resignbuf));
+	isc_time_formattimestamp(&zone->refreshkeytime, refreshkeybuf, sizeof(refreshkeybuf));
+	isc_time_formattimestamp(&zone->nsec3chaintime, nsec3buf, sizeof(nsec3buf));
+	isc_time_formattimestamp(&zone->keywarntime, warnbuf, sizeof(warnbuf));
+
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: zone=%p (%s) NOW=%s (us=%u)", file, line, fn, zone, zone->masterfile,  nowbuf, now->nanoseconds);
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: zone=%p (%s) sign=%s (us=%u)",  file, line, fn, zone, zone->masterfile,  signbuf, zone->signingtime.nanoseconds);
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: zone=%p (%s) resign=%s (us=%u)",  file, line, fn, zone, zone->masterfile,  resignbuf, zone->resigntime.nanoseconds);
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: zone=%p (%s) refreshkey=%s (us=%u)",  file, line, fn, zone, zone->masterfile,  refreshkeybuf, zone->refreshkeytime.nanoseconds);
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: zone=%p (%s) nsec3=%s (us=%u)",  file, line, fn, zone, zone->masterfile,  nsec3buf, zone->nsec3chaintime.nanoseconds);
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: zone=%p (%s) keywarn=%s (us=%u)",  file, line, fn, zone, zone->masterfile,  warnbuf, zone->keywarntime.nanoseconds);
+
+}
 
 isc_result_t
 dns_zone_create(dns_zone_t **zonep, isc_mem_t *mctx) {
@@ -923,7 +955,7 @@ isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_W
 	zone->maxxfrout = MAX_XFER_TIME;
 	zone->ssutable = NULL;
 	zone->sigvalidityinterval = 30 * 24 * 3600;
-	zone->sigresigninginterval = 7 * 24 * 3600;
+	zone->sigresigninginterval = 7 * 24 * 3600 +11;
 	zone->view = NULL;
 	zone->acache = NULL;
 	zone->checkmx = NULL;
@@ -3058,6 +3090,7 @@ set_resigntime(dns_zone_t *zone) {
 	dns_rdataset_init(&rdataset);
 	dns_fixedname_init(&fixed);
 
+zone_print_timers(zone, NULL, __FILE__, __LINE__, __FUNCTION__);
 	ZONEDB_LOCK(&zone->dblock, isc_rwlocktype_read);
 	if (zone->db != NULL)
 		dns_db_attach(zone->db, &db);
@@ -3071,15 +3104,18 @@ set_resigntime(dns_zone_t *zone) {
 				       dns_fixedname_name(&fixed));
 	if (result != ISC_R_SUCCESS) {
 		isc_time_settoepoch(&zone->resigntime);
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: zone=%p (%s)            CLEAR RESIGN TIMER", __FILE__, __LINE__, __FUNCTION__, zone, zone->masterfile);
 		goto cleanup;
 	}
-
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: zone=%p (%s)  rdataset.resign=%u sigresigninginterval=%u", __FILE__, __LINE__, __FUNCTION__, zone, zone->masterfile, rdataset.resign, zone->sigresigninginterval);
+	
 	resign = rdataset.resign - zone->sigresigninginterval;
 	dns_rdataset_disassociate(&rdataset);
 	isc_random_get(&nanosecs);
 	nanosecs %= 1000000000;
 	isc_time_set(&zone->resigntime, resign, nanosecs);
  cleanup:
+zone_print_timers(zone, NULL, __FILE__, __LINE__, __FUNCTION__);
 	dns_db_detach(&db);
 	return;
 }
@@ -3207,7 +3243,7 @@ set_refreshkeytimer(dns_zone_t *zone, dns_rdata_keydata_t *key,
 		zone->refreshkeytime = timethen;
 
 	isc_time_formattimestamp(&zone->refreshkeytime, timebuf, 80);
-	dns_zone_log(zone, ISC_LOG_DEBUG(1), "next key refresh: %s", timebuf);
+	dns_zone_log(zone, ISC_LOG_DEBUG(1), "next key refresh: %s %u", timebuf, zone->sigresigninginterval);
 	zone_settimer(zone, &timenow);
 }
 
@@ -3775,6 +3811,7 @@ sync_keyzone(dns_zone_t *zone, dns_db_t *db) {
 		dns_zone_log(zone, ISC_LOG_ERROR,
 			     "unable to synchronize managed keys: %s",
 			     dns_result_totext(result));
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: zone=%p (%s)            CLEAR REFRESHKEY TIMER", __FILE__, __LINE__, __FUNCTION__, zone, zone->masterfile);
 		isc_time_settoepoch(&zone->refreshkeytime);
 	}
 	if (keynode != NULL)
@@ -5735,6 +5772,7 @@ REQUIRE(zone->keydirectory != NULL);
 	i = 0;
 	while (result == ISC_R_SUCCESS) {
 		resign = rdataset.resign - zone->sigresigninginterval;
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: resign=%u", __FILE__, __LINE__, __FUNCTION__, resign);
 		covers = rdataset.covers;
 		dns_rdataset_disassociate(&rdataset);
 
@@ -5841,6 +5879,7 @@ REQUIRE(zone->keydirectory != NULL);
 	} else if (db != NULL)
 		dns_db_detach(&db);
 	if (result == ISC_R_SUCCESS) {
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: set_resigntime(masterfile=%s)", __FILE__, __LINE__, __FUNCTION__, zone->masterfile);
 		set_resigntime(zone);
 		LOCK_ZONE(zone);
 		zone_needdump(zone, DNS_DUMP_DELAY);
@@ -7444,6 +7483,7 @@ zone_sign(dns_zone_t *zone) {
 
 	ENTER;
 
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: zone=%p (%s)", __FILE__, __LINE__, __FUNCTION__, zone, zone->masterfile);
 	dns_rdataset_init(&rdataset);
 	dns_fixedname_init(&fixed);
 	name = dns_fixedname_name(&fixed);
@@ -7523,7 +7563,9 @@ isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_W
 	if (!build_nsec && !build_nsec3)
 		build_nsec = ISC_TRUE;
 
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: zone=%p (%s)", __FILE__, __LINE__, __FUNCTION__, zone, zone->masterfile);
 	while (signing != NULL && nodes-- > 0 && signatures > 0) {
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: zone=%p (%s)", __FILE__, __LINE__, __FUNCTION__, zone, zone->masterfile);
 		nextsigning = ISC_LIST_NEXT(signing, link);
 
 		ZONEDB_LOCK(&zone->dblock, isc_rwlocktype_read);
@@ -7582,6 +7624,7 @@ isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_W
 		if (first) {
 			dns_fixedname_t ffound;
 			dns_name_t *found;
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: zone=%p (%s)", __FILE__, __LINE__, __FUNCTION__, zone, zone->masterfile);
 			dns_fixedname_init(&ffound);
 			found = dns_fixedname_name(&ffound);
 			result = dns_db_find(db, name, version,
@@ -7604,8 +7647,10 @@ isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_W
 		/*
 		 * Process one node.
 		 */
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: zone=%p (%s)", __FILE__, __LINE__, __FUNCTION__, zone, zone->masterfile);
 		dns_dbiterator_pause(signing->dbiterator);
 		for (i = 0; i < nkeys; i++) {
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: zone=%p (%s)", __FILE__, __LINE__, __FUNCTION__, zone, zone->masterfile);
 			isc_boolean_t both = ISC_FALSE;
 
 			/*
@@ -7761,7 +7806,9 @@ isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_W
 	/*
 	 * Have we changed anything?
 	 */
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: zone=%p (%s)", __FILE__, __LINE__, __FUNCTION__, zone, zone->masterfile);
 	if (ISC_LIST_EMPTY(zonediff.diff->tuples)) {
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: zone=%p (%s)", __FILE__, __LINE__, __FUNCTION__, zone, zone->masterfile);
 		if (zonediff.offline)
 			commit = ISC_TRUE;
 		result = ISC_R_SUCCESS;
@@ -7782,6 +7829,7 @@ isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_W
 	result = update_soa_serial(db, version, zonediff.diff, zone->mctx,
 				   zone->updatemethod);
 	if (result != ISC_R_SUCCESS) {
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: zone=%p (%s)", __FILE__, __LINE__, __FUNCTION__, zone, zone->masterfile);
 		dns_zone_log(zone, ISC_LOG_ERROR,
 			     "zone_sign:update_soa_serial -> %s",
 			     dns_result_totext(result));
@@ -7792,6 +7840,7 @@ isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_W
 	 * Generate maximum life time signatures so that the above loop
 	 * termination is sensible.
 	 */
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: zone=%p (%s)", __FILE__, __LINE__, __FUNCTION__, zone, zone->masterfile);
 	result = add_sigs(db, version, &zone->origin, dns_rdatatype_soa,
 			  zonediff.diff, zone_keys, nkeys, zone->mctx,
 			  inception, soaexpire, check_ksk, keyset_kskonly);
@@ -7805,12 +7854,14 @@ isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_W
 	/*
 	 * Write changes to journal file.
 	 */
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: zone=%p (%s)", __FILE__, __LINE__, __FUNCTION__, zone, zone->masterfile);
 	CHECK(zone_journal(zone, zonediff.diff, NULL, "zone_sign"));
 
  pauseall:
 	/*
 	 * Pause all iterators so that dns_db_closeversion() can succeed.
 	 */
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: zone=%p (%s)", __FILE__, __LINE__, __FUNCTION__, zone, zone->masterfile);
 	for (signing = ISC_LIST_HEAD(zone->signing);
 	     signing != NULL;
 	     signing = ISC_LIST_NEXT(signing, link))
@@ -7830,6 +7881,7 @@ isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_W
 	 * Everything succeeded so we can clean these up now.
 	 */
 	signing = ISC_LIST_HEAD(cleanup);
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: zone=%p (%s)", __FILE__, __LINE__, __FUNCTION__, zone, zone->masterfile);
 	while (signing != NULL) {
 		ISC_LIST_UNLINK(cleanup, signing, link);
 		dns_db_detach(&signing->db);
@@ -7848,6 +7900,7 @@ isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_W
 	}
 
  failure:
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: zone=%p (%s) FAILURE", __FILE__, __LINE__, __FUNCTION__, zone, zone->masterfile);
 	/*
 	 * Rollback the cleanup list.
 	 */
@@ -7886,8 +7939,10 @@ isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_W
 		else
 			isc_interval_set(&i, 0, 10000000);	/* 10 ms */
 		isc_time_nowplusinterval(&zone->signingtime, &i);
-	} else
+	} else {
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: zone=%p (%s)            CLEAR SIGN TIMER", __FILE__, __LINE__, __FUNCTION__, zone, zone->masterfile);
 		isc_time_settoepoch(&zone->signingtime);
+	}
 }
 
 static isc_result_t
@@ -8644,6 +8699,7 @@ zone_refreshkeys(dns_zone_t *zone) {
 
 	LOCK_ZONE(zone);
 	if (DNS_ZONE_FLAG(zone, DNS_ZONEFLG_EXITING)) {
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: zone=%p (%s)            CLEAR REFRESHKEY TIMER", __FILE__, __LINE__, __FUNCTION__, zone, zone->masterfile);
 		isc_time_settoepoch(&zone->refreshkeytime);
 		UNLOCK_ZONE(zone);
 		return;
@@ -8935,24 +8991,33 @@ zone_maintenance(dns_zone_t *zone) {
 		/*
 		 * Do we need to sign/resign some RRsets?
 		 */
-isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: zone=%p", __FILE__, __LINE__, __FUNCTION__, zone);
+		zone_print_timers(zone, &now, __FILE__, __LINE__, __FUNCTION__);
+		isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: zone=%p (%s) NOW=%u signingtime=+%u resigntime=+%u nsec3chaintime=+%u keywarntime=+%u", __FILE__, __LINE__, __FUNCTION__, zone, zone->masterfile,  now.seconds, zone->signingtime.seconds-now.seconds, zone->resigntime.seconds-now.seconds, zone->nsec3chaintime.seconds-now.seconds, zone->keywarntime.seconds-now.seconds);
 //REQUIRE(zone->keydirectory != NULL);
 		if (!isc_time_isepoch(&zone->signingtime) &&
-		    isc_time_compare(&now, &zone->signingtime) >= 0)
+		    isc_time_compare(&now, &zone->signingtime) >= 0) {
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: zone=%p (%s)", __FILE__, __LINE__, __FUNCTION__, zone, zone->masterfile);
 			zone_sign(zone);
+		}
 		else if (!isc_time_isepoch(&zone->resigntime) &&
-		    isc_time_compare(&now, &zone->resigntime) >= 0)
+		    isc_time_compare(&now, &zone->resigntime) >= 0) {
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: zone=%p (%s)", __FILE__, __LINE__, __FUNCTION__, zone, zone->masterfile);
 			zone_resigninc(zone);
+		}
 		else if (!isc_time_isepoch(&zone->nsec3chaintime) &&
-			isc_time_compare(&now, &zone->nsec3chaintime) >= 0)
+			isc_time_compare(&now, &zone->nsec3chaintime) >= 0) {
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: zone=%p (%s)", __FILE__, __LINE__, __FUNCTION__, zone, zone->masterfile);
 			zone_nsec3chain(zone);
+		}
 		/*
 		 * Do we need to issue a key expiry warning?
 		 */
 		if (!isc_time_isepoch(&zone->keywarntime) &&
-		    isc_time_compare(&now, &zone->keywarntime) >= 0)
+		    isc_time_compare(&now, &zone->keywarntime) >= 0) {
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: zone=%p (%s)", __FILE__, __LINE__, __FUNCTION__, zone, zone->masterfile);
 			set_key_expiry_warning(zone, zone->key_expiry,
 					       isc_time_seconds(&now));
+		}
 		break;
 
 	default:
@@ -11558,6 +11623,7 @@ zone_settimer(dns_zone_t *zone, isc_time_t *now) {
 	if (DNS_ZONE_FLAG(zone, DNS_ZONEFLG_EXITING))
 		return;
 
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s:  zone=%p", __FILE__, __LINE__, __FUNCTION__, zone);
 	isc_time_settoepoch(&next);
 
 	switch (zone->type) {
@@ -11567,6 +11633,7 @@ zone_settimer(dns_zone_t *zone, isc_time_t *now) {
 		/* FALLTHROUGH */
 
 	case dns_zone_master:
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s:  zone=%p", __FILE__, __LINE__, __FUNCTION__, zone);
 		if (DNS_ZONE_FLAG(zone, DNS_ZONEFLG_NEEDNOTIFY))
 			next = zone->notifytime;
 		if (DNS_ZONE_FLAG(zone, DNS_ZONEFLG_NEEDDUMP) &&
@@ -11581,28 +11648,38 @@ zone_settimer(dns_zone_t *zone, isc_time_t *now) {
 		if (!DNS_ZONE_FLAG(zone, DNS_ZONEFLG_REFRESHING) &&
 		    !isc_time_isepoch(&zone->refreshkeytime)) {
 			if (isc_time_isepoch(&next) ||
-			    isc_time_compare(&zone->refreshkeytime, &next) < 0)
+			    isc_time_compare(&zone->refreshkeytime, &next) < 0)  {
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s:  zone=%p", __FILE__, __LINE__, __FUNCTION__, zone);
 				next = zone->refreshkeytime;
+			}
 		}
 		if (!isc_time_isepoch(&zone->resigntime)) {
 			if (isc_time_isepoch(&next) ||
-			    isc_time_compare(&zone->resigntime, &next) < 0)
+			    isc_time_compare(&zone->resigntime, &next) < 0) {
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s:  zone=%p", __FILE__, __LINE__, __FUNCTION__, zone);
 				next = zone->resigntime;
+			}
 		}
 		if (!isc_time_isepoch(&zone->keywarntime)) {
 			if (isc_time_isepoch(&next) ||
-			    isc_time_compare(&zone->keywarntime, &next) < 0)
+			    isc_time_compare(&zone->keywarntime, &next) < 0) {
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s:  zone=%p", __FILE__, __LINE__, __FUNCTION__, zone);
 				next = zone->keywarntime;
+			}
 		}
 		if (!isc_time_isepoch(&zone->signingtime)) {
 			if (isc_time_isepoch(&next) ||
-			    isc_time_compare(&zone->signingtime, &next) < 0)
+			    isc_time_compare(&zone->signingtime, &next) < 0) {
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s:  zone=%p", __FILE__, __LINE__, __FUNCTION__, zone);
 				next = zone->signingtime;
+			}
 		}
 		if (!isc_time_isepoch(&zone->nsec3chaintime)) {
 			if (isc_time_isepoch(&next) ||
-			    isc_time_compare(&zone->nsec3chaintime, &next) < 0)
+			    isc_time_compare(&zone->nsec3chaintime, &next) < 0) {
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s:  zone=%p", __FILE__, __LINE__, __FUNCTION__, zone);
 				next = zone->nsec3chaintime;
+			}
 		}
 		break;
 
@@ -11638,6 +11715,7 @@ zone_settimer(dns_zone_t *zone, isc_time_t *now) {
 		break;
 
 	case dns_zone_key:
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s:  zone=%p", __FILE__, __LINE__, __FUNCTION__, zone);
 		if (DNS_ZONE_FLAG(zone, DNS_ZONEFLG_NEEDDUMP) &&
 		    !DNS_ZONE_FLAG(zone, DNS_ZONEFLG_DUMPING)) {
 			INSIST(!isc_time_isepoch(&zone->dumptime));
@@ -11648,8 +11726,10 @@ zone_settimer(dns_zone_t *zone, isc_time_t *now) {
 		if (!DNS_ZONE_FLAG(zone, DNS_ZONEFLG_REFRESHING)) {
 			if (isc_time_isepoch(&next) ||
 			    (!isc_time_isepoch(&zone->refreshkeytime) &&
-			    isc_time_compare(&zone->refreshkeytime, &next) < 0))
+			    isc_time_compare(&zone->refreshkeytime, &next) < 0)) {
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s:  zone=%p", __FILE__, __LINE__, __FUNCTION__, zone);
 				next = zone->refreshkeytime;
+			}
 		}
 		break;
 
@@ -11658,6 +11738,7 @@ zone_settimer(dns_zone_t *zone, isc_time_t *now) {
 	}
 
 	if (isc_time_isepoch(&next)) {
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s:  zone=%p", __FILE__, __LINE__, __FUNCTION__, zone);
 		zone_debuglog(zone, me, 10, "settimer inactive");
 		result = isc_timer_reset(zone->timer, isc_timertype_inactive,
 					  NULL, NULL, ISC_TRUE);
@@ -11666,8 +11747,16 @@ zone_settimer(dns_zone_t *zone, isc_time_t *now) {
 				     "could not deactivate zone timer: %s",
 				     isc_result_totext(result));
 	} else {
-		if (isc_time_compare(&next, now) <= 0)
+
+		char nextbuf[80], nowbuf[80];
+		isc_time_formattimestamp(&next, nextbuf, sizeof(nextbuf));
+		isc_time_formattimestamp(now, nowbuf, sizeof(nowbuf));
+
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s:  zone=%p next=%s (us=%u)  now=%s (us=%u)", __FILE__, __LINE__, __FUNCTION__, zone, nextbuf, next.nanoseconds, nowbuf, now->nanoseconds);
+		if (isc_time_compare(&next, now) <= 0) {
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s:  zone=%p", __FILE__, __LINE__, __FUNCTION__, zone);
 			next = *now;
+		}
 		result = isc_timer_reset(zone->timer, isc_timertype_once,
 					 &next, NULL, ISC_TRUE);
 		if (result != ISC_R_SUCCESS)
@@ -14659,7 +14748,7 @@ dns_zonemgr_managezone(dns_zonemgr_t *zmgr, dns_zone_t *zone) {
 	isc_task_setname(zone->loadtask, "loadzone", zone);
 
 isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: calling isc_timer_create with zone=%p", __FILE__, __LINE__, __FUNCTION__, zone);
-//REQUIRE(dns_zone_getkeydirectory(zone) != NULL);
+REQUIRE(zone->masterfile==NULL || strcmp(zone->masterfile,"tmpublic.net.Public.zone") || dns_zone_getkeydirectory(zone) != NULL);
 	result = isc_timer_create(zmgr->timermgr, isc_timertype_inactive,
 				  NULL, NULL,
 				  zone->task, zone_timer, zone,
@@ -15879,6 +15968,7 @@ zone_signwithkey(dns_zone_t *zone, dns_secalg_t algorithm, isc_uint16_t keyid,
 	isc_time_t now;
 	dns_db_t *db = NULL;
 
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: zone=%p (%s)", __FILE__, __LINE__, __FUNCTION__, zone, zone->masterfile);
 	signing = isc_mem_get(zone->mctx, sizeof *signing);
 	if (signing == NULL)
 		return (ISC_R_NOMEMORY);
@@ -15924,6 +16014,7 @@ zone_signwithkey(dns_zone_t *zone, dns_secalg_t algorithm, isc_uint16_t keyid,
 	if (result == ISC_R_SUCCESS)
 		result = dns_dbiterator_first(signing->dbiterator);
 	if (result == ISC_R_SUCCESS) {
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: zone=%p (%s)", __FILE__, __LINE__, __FUNCTION__, zone, zone->masterfile);
 		dns_dbiterator_pause(signing->dbiterator);
 		ISC_LIST_INITANDAPPEND(zone->signing, signing, link);
 		signing = NULL;
@@ -16586,6 +16677,7 @@ isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_W
 		UNLOCK_ZONE(zone);
 	}
 
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: zone=%p (%s)            CLEAR REFRESHKEY TIMER", __FILE__, __LINE__, __FUNCTION__, zone, zone->masterfile);
 	isc_time_settoepoch(&zone->refreshkeytime);
 
 	/*
@@ -16623,7 +16715,7 @@ isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_W
 		zone_settimer(zone, &timenow);
 
 		isc_time_formattimestamp(&zone->refreshkeytime, timebuf, 80);
-		dns_zone_log(zone, ISC_LOG_INFO, "next key event: %s", timebuf);
+		dns_zone_log(zone, ISC_LOG_INFO, "next key event: %s %u %u", timebuf, zone->sigresigninginterval, zone->refreshkeyinterval);
 	}
 
  done:
@@ -16812,7 +16904,7 @@ dns_zone_link(dns_zone_t *zone, dns_zone_t *raw) {
 	LOCK_ZONE(raw);
 
 isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: calling isc_timer_create with zone=%p", __FILE__, __LINE__, __FUNCTION__, zone);
-//REQUIRE(zone->keydirectory != NULL);
+//REQUIRE(raw->keydirectory != NULL);
 	result = isc_timer_create(zmgr->timermgr, isc_timertype_inactive,
 				  NULL, NULL, zone->task, zone_timer, raw,
 				  &raw->timer);
