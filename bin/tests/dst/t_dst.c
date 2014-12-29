@@ -190,6 +190,7 @@ dh(dns_name_t *name1, int id1, dns_name_t *name2, int id2, isc_mem_t *mctx,
 		goto cleanup;
 	}
 
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: calling  dst_key_fromfile with CURRENT directory=%s", __FILE__, __LINE__, __FUNCTION__, current);
 	ret = dst_key_fromfile(name1, id1, alg, type, current, mctx, &key1);
 	if (ret != ISC_R_SUCCESS) {
 		t_info("dst_key_fromfile(%d) returned: %s\n",
@@ -198,6 +199,7 @@ dh(dns_name_t *name1, int id1, dns_name_t *name2, int id2, isc_mem_t *mctx,
 		goto cleanup;
 	}
 
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: calling  dst_key_fromfile with CURRENT directory=%s", __FILE__, __LINE__, __FUNCTION__, current);
 	ret = dst_key_fromfile(name2, id2, alg, type, current, mctx, &key2);
 	if (ret != ISC_R_SUCCESS) {
 		t_info("dst_key_fromfile(%d) returned: %s\n",
@@ -295,6 +297,7 @@ io(dns_name_t *name, isc_uint16_t id, isc_uint16_t alg, int type,
 		goto failure;
 	}
 
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: calling  dst_key_fromfile with CURRENT directory=%s", __FILE__, __LINE__, __FUNCTION__, current);
 	ret = dst_key_fromfile(name, id, alg, type, current, mctx, &key);
 	if (ret != ISC_R_SUCCESS) {
 		t_info("dst_key_fromfile(%d) returned: %s\n",
@@ -369,6 +372,7 @@ io(dns_name_t *name, isc_uint16_t id, isc_uint16_t alg, int type,
 
 	/* Reread key to confirm TTL was changed */
 	dst_key_free(&key);
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: calling  dst_key_fromfile with tmp directory=%s", __FILE__, __LINE__, __FUNCTION__, tmp);
 	ret = dst_key_fromfile(name, id, alg, type, tmp, mctx, &key);
 	if (ret != ISC_R_SUCCESS) {
 		t_info("dst_key_fromfile(%d) returned: %s\n",
@@ -775,6 +779,7 @@ t2_sigchk(char *datapath, char *sigpath, char *keyname,
 		++*nprobs;
 		return;
 	}
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: calling  dst_key_fromfile with NULL directory=%s", __FILE__, __LINE__, __FUNCTION__, NULL);
 	isc_result = dst_key_fromfile(name, id, alg, type, NULL, mctx, &key);
 	if (isc_result != ISC_R_SUCCESS) {
 		t_info("dst_key_fromfile failed %s\n",

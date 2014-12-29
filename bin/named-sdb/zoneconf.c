@@ -830,6 +830,7 @@ ns_zone_configure(const cfg_obj_t *config, const cfg_obj_t *vconfig,
 	dns_zonestat_level_t statlevel;
 	int seconds;
 	dns_zone_t *mayberaw = (raw != NULL) ? raw : zone;
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: raw=%p zone=%p", __FILE__, __LINE__, __FUNCTION__, raw, zone);
 
 	i = 0;
 	if (zconfig != NULL) {
@@ -1333,6 +1334,7 @@ ns_zone_configure(const cfg_obj_t *config, const cfg_obj_t *vconfig,
 		if (result == ISC_R_SUCCESS) {
 			filename = cfg_obj_asstring(obj);
 			RETERR(dns_zone_setkeydirectory(zone, filename));
+REQUIRE(dns_zone_getkeydirectory(zone) != NULL);
 		}
 
 		obj = NULL;

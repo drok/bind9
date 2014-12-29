@@ -1508,6 +1508,7 @@ dlzconfigure_callback(dns_view_t *view, dns_zone_t *zone) {
 	dns_rdataclass_t zclass = view->rdclass;
 	isc_result_t result;
 
+REQUIRE(dns_zone_getkeydirectory(zone) != NULL);
 	result = dns_zonemgr_managezone(ns_g_server->zonemgr, zone);
 	if (result != ISC_R_SUCCESS)
 		return (result);
@@ -1571,6 +1572,7 @@ dns64_reverse(dns_view_t *view, isc_mem_t *mctx, isc_netaddr_t *na,
 	CHECK(dns_zone_create(&zone, mctx));
 	CHECK(dns_zone_setorigin(zone, name));
 	dns_zone_setview(zone, view);
+REQUIRE(dns_zone_getkeydirectory(zone) != NULL);
 	CHECK(dns_zonemgr_managezone(ns_g_server->zonemgr, zone));
 	dns_zone_setclass(zone, view->rdclass);
 	dns_zone_settype(zone, dns_zone_master);
@@ -2062,6 +2064,7 @@ create_empty_zone(dns_zone_t *zone, dns_name_t *name, dns_view_t *view,
 		CHECK(dns_zonemgr_createzone(ns_g_server->zonemgr, &myzone));
 		zone = myzone;
 		CHECK(dns_zone_setorigin(zone, name));
+REQUIRE(dns_zone_getkeydirectory(zone) != NULL);
 		CHECK(dns_zonemgr_managezone(ns_g_server->zonemgr, zone));
 		if (db == NULL)
 			CHECK(dns_zone_setdbtype(zone, empty_dbtypec,
@@ -4008,6 +4011,7 @@ configure_zone(const cfg_obj_t *config, const cfg_obj_t *zconfig,
 						     &zone));
 			CHECK(dns_zone_setorigin(zone, origin));
 			dns_zone_setview(zone, view);
+REQUIRE(dns_zone_getkeydirectory(zone) != NULL);
 			CHECK(dns_zonemgr_managezone(ns_g_server->zonemgr,
 						     zone));
 			dns_zone_setstats(zone, ns_g_server->zonestats);
@@ -4092,6 +4096,7 @@ configure_zone(const cfg_obj_t *config, const cfg_obj_t *zconfig,
 		dns_zone_setview(zone, view);
 		if (view->acache != NULL)
 			dns_zone_setacache(zone, view->acache);
+REQUIRE(dns_zone_getkeydirectory(zone) != NULL);
 		CHECK(dns_zonemgr_managezone(ns_g_server->zonemgr, zone));
 		dns_zone_setstats(zone, ns_g_server->zonestats);
 	}
@@ -4151,6 +4156,7 @@ configure_zone(const cfg_obj_t *config, const cfg_obj_t *zconfig,
 			if (view->acache != NULL)
 				dns_zone_setacache(raw, view->acache);
 			dns_zone_setstats(raw, ns_g_server->zonestats);
+REQUIRE(dns_zone_getkeydirectory(zone) != NULL);
 			CHECK(dns_zone_link(zone, raw));
 		}
 	}
@@ -4236,6 +4242,7 @@ add_keydata_zone(dns_view_t *view, const char *directory, isc_mem_t *mctx) {
 	dns_zone_settype(zone, dns_zone_key);
 	dns_zone_setclass(zone, view->rdclass);
 
+REQUIRE(dns_zone_getkeydirectory(zone) != NULL);
 	CHECK(dns_zonemgr_managezone(ns_g_server->zonemgr, zone));
 
 	if (view->acache != NULL)

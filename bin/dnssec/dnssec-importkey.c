@@ -217,6 +217,7 @@ emit(const char *dir, dns_rdata_t *rdata) {
 		      isc_result_totext(result));
 	}
 
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: calling  dst_key_fromfile with directory=%s", __FILE__, __LINE__, __FUNCTION__, dir);
 	result = dst_key_fromfile(dst_key_name(key), dst_key_id(key),
 				  dst_key_alg(key),
 				  DST_TYPE_PUBLIC | DST_TYPE_PRIVATE,

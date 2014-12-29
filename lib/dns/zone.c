@@ -846,7 +846,12 @@ dns_zone_create(dns_zone_t **zonep, isc_mem_t *mctx) {
 	zone->strviewname = NULL;
 	zone->masterfile = NULL;
 	zone->masterformat = dns_masterformat_none;
-	zone->keydirectory = NULL;
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: zone=%p", __FILE__, __LINE__, __FUNCTION__, zone);
+#ifdef USE_VALGRIND_MEMCHECK
+        // Debug what  sets this to null, and why it's not used to load keys
+        VALGRIND_MAKE_MEM_NOACCESS(zone->keydirectory, sizeof(zone->keydirectory));
+#endif
+	UNCONFIGURED_PTR(zone->keydirectory);
 	zone->journalsize = -1;
 	zone->journal = NULL;
 	zone->rdclass = dns_rdataclass_none;
@@ -5238,10 +5243,12 @@ find_zone_keys(dns_zone_t *zone, dns_db_t *db, dns_dbversion_t *ver,
 {
 	isc_result_t result;
 	dns_dbnode_t *node = NULL;
+        REQUIRE(zone->keydirectory != NULL);
 	const char *directory = dns_zone_getkeydirectory(zone);
 
 	CHECK(dns_db_findnode(db, dns_db_origin(db), ISC_FALSE, &node));
 	memset(keys, 0, sizeof(*keys) * maxkeys);
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: calling  dns_dnssec_findzonekeys2 with directory=%s for zone=%p", __FILE__, __LINE__, __FUNCTION__, directory, zone);
 	result = dns_dnssec_findzonekeys2(db, ver, node, dns_db_origin(db),
 					  directory, mctx, maxkeys, keys,
 					  nkeys);
@@ -5691,6 +5698,8 @@ zone_resigninc(dns_zone_t *zone) {
 		goto failure;
 	}
 
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: calling  find_zone_keys for zone=%p", __FILE__, __LINE__, __FUNCTION__, zone);
+REQUIRE(zone->keydirectory != NULL);
 	result = find_zone_keys(zone, db, version, zone->mctx, DNS_MAXZONEKEYS,
 				zone_keys, &nkeys);
 	if (result != ISC_R_SUCCESS) {
@@ -6617,6 +6626,8 @@ zone_nsec3chain(dns_zone_t *zone) {
 		goto failure;
 	}
 
+REQUIRE(zone->keydirectory != NULL);
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: calling  find_zone_keys for zone=%p", __FILE__, __LINE__, __FUNCTION__, zone);
 	result = find_zone_keys(zone, db, version, zone->mctx,
 				DNS_MAXZONEKEYS, zone_keys, &nkeys);
 	if (result != ISC_R_SUCCESS) {
@@ -7468,6 +7479,8 @@ zone_sign(dns_zone_t *zone) {
 		goto failure;
 	}
 
+REQUIRE(zone->keydirectory != NULL);
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: calling  find_zone_keys for zone=%p", __FILE__, __LINE__, __FUNCTION__, zone);
 	result = find_zone_keys(zone, db, version, zone->mctx,
 				DNS_MAXZONEKEYS, zone_keys, &nkeys);
 	if (result != ISC_R_SUCCESS) {
@@ -8922,6 +8935,8 @@ zone_maintenance(dns_zone_t *zone) {
 		/*
 		 * Do we need to sign/resign some RRsets?
 		 */
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: zone=%p", __FILE__, __LINE__, __FUNCTION__, zone);
+//REQUIRE(zone->keydirectory != NULL);
 		if (!isc_time_isepoch(&zone->signingtime) &&
 		    isc_time_compare(&now, &zone->signingtime) >= 0)
 			zone_sign(zone);
@@ -11523,6 +11538,7 @@ zone_timer(isc_task_t *task, isc_event_t *event) {
 
 	UNUSED(task);
 	REQUIRE(DNS_ZONE_VALID(zone));
+//REQUIRE(zone->keydirectory != NULL);
 
 	ENTER;
 
@@ -14642,6 +14658,8 @@ dns_zonemgr_managezone(dns_zonemgr_t *zmgr, dns_zone_t *zone) {
 	isc_task_setname(zone->task, "zone", zone);
 	isc_task_setname(zone->loadtask, "loadzone", zone);
 
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: calling isc_timer_create with zone=%p", __FILE__, __LINE__, __FUNCTION__, zone);
+//REQUIRE(dns_zone_getkeydirectory(zone) != NULL);
 	result = isc_timer_create(zmgr->timermgr, isc_timertype_inactive,
 				  NULL, NULL,
 				  zone->task, zone_timer, zone,
@@ -16098,6 +16116,8 @@ sign_apex(dns_zone_t *zone, dns_db_t *db, dns_dbversion_t *ver,
 	unsigned int nkeys = 0, i;
 	dns_difftuple_t *tuple;
 
+REQUIRE(zone->keydirectory != NULL);
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: calling  find_zone_keys for zone=%p", __FILE__, __LINE__, __FUNCTION__, zone);
 	result = find_zone_keys(zone, db, ver, zone->mctx, DNS_MAXZONEKEYS,
 				zone_keys, &nkeys);
 	if (result != ISC_R_SUCCESS) {
@@ -16356,6 +16376,7 @@ zone_rekey(dns_zone_t *zone) {
 				     dns_rdatatype_none, 0, &keyset, &keysigs);
 	if (result == ISC_R_SUCCESS) {
 		ttl = keyset.ttl;
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: calling  dns_dnssec_keylistfromrdataset with directory=%s for zone=%p", __FILE__, __LINE__, __FUNCTION__, dir, zone);
 		CHECK(dns_dnssec_keylistfromrdataset(&zone->origin, dir,
 						     mctx, &keyset,
 						     &keysigs, &soasigs,
@@ -16790,6 +16811,8 @@ dns_zone_link(dns_zone_t *zone, dns_zone_t *raw) {
 	LOCK_ZONE(zone);
 	LOCK_ZONE(raw);
 
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: calling isc_timer_create with zone=%p", __FILE__, __LINE__, __FUNCTION__, zone);
+//REQUIRE(zone->keydirectory != NULL);
 	result = isc_timer_create(zmgr->timermgr, isc_timertype_inactive,
 				  NULL, NULL, zone->task, zone_timer, raw,
 				  &raw->timer);

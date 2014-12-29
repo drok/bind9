@@ -29,6 +29,18 @@
 #include <isc/platform.h>
 #include <isc/types.h>
 #include <isc/xml.h>
+#ifdef HAVE_VALGRIND
+#  include <valgrind/memcheck.h>
+#  define USE_VALGRIND_MEMCHECK
+#endif
+
+#ifdef USE_VALGRIND_MEMCHECK
+#  define MEM_UNDEFINED(addr,size) VALGRIND_MAKE_MEM_UNDEFINED(addr,size)
+#  define UNCONFIGURED_PTR(x) { (x)=NULL; VALGRIND_MAKE_MEM_UNDEFINED(x,sizeof(x)); }
+#else
+#  define MEM_UNDEFINED(addr,size)
+#  define UNCONFIGURED_PTR(x) (x)=NULL
+#endif
 
 ISC_LANG_BEGINDECLS
 

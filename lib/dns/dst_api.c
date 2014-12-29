@@ -470,6 +470,7 @@ dst_key_fromfile(dns_name_t *name, dns_keytag_t id,
 	REQUIRE(keyp != NULL && *keyp == NULL);
 
 	CHECKALG(alg);
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: directory=%s", __FILE__, __LINE__, __FUNCTION__, directory);
 
 	isc_buffer_init(&b, filename, sizeof(filename));
 	result = buildfilename(name, id, alg, type, directory, &b);
@@ -532,6 +533,7 @@ dst_key_fromnamedfile(const char *filename, const char *dirname,
 			   dirname, filename, ".key");
 	INSIST(result == ISC_R_SUCCESS);
 
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: newfilename=%s", __FILE__, __LINE__, __FUNCTION__, newfilename);
 	result = dst_key_read_public(newfilename, type, mctx, &pubkey);
 	isc_mem_put(mctx, newfilename, newfilenamelen);
 	newfilename = NULL;

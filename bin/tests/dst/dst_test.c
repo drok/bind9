@@ -139,6 +139,7 @@ io(dns_name_t *name, int id, int alg, int type, isc_mem_t *mctx) {
 	dst_key_t *key = NULL;
 	isc_result_t ret;
 
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: calling  dst_key_fromfile with CURRENT directory=%s", __FILE__, __LINE__, __FUNCTION__, current);
 	ret = dst_key_fromfile(name, id, alg, type, current, mctx, &key);
 	printf("read(%d) returned: %s\n", alg, isc_result_totext(ret));
 	if (ret != 0)
@@ -162,10 +163,12 @@ dh(dns_name_t *name1, int id1, dns_name_t *name2, int id2, isc_mem_t *mctx) {
 	int alg = DST_ALG_DH;
 	int type = DST_TYPE_PUBLIC|DST_TYPE_PRIVATE|DST_TYPE_KEY;
 
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: calling  dst_key_fromfile with CURRENT directory=%s", __FILE__, __LINE__, __FUNCTION__, current);
 	ret = dst_key_fromfile(name1, id1, alg, type, current, mctx, &key1);
 	printf("read(%d) returned: %s\n", alg, isc_result_totext(ret));
 	if (ret != 0)
 		return;
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: calling  dst_key_fromfile with CURRENT directory=%s", __FILE__, __LINE__, __FUNCTION__, current);
 	ret = dst_key_fromfile(name2, id2, alg, type, current, mctx, &key2);
 	printf("read(%d) returned: %s\n", alg, isc_result_totext(ret));
 	if (ret != 0)

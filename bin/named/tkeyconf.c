@@ -79,6 +79,7 @@ ns_tkeyctx_fromconfig(const cfg_obj_t *options, isc_mem_t *mctx,
 		name = dns_fixedname_name(&fname);
 		RETERR(dns_name_fromtext(name, &b, dns_rootname, 0, NULL));
 		type = DST_TYPE_PUBLIC|DST_TYPE_PRIVATE|DST_TYPE_KEY;
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: calling  dst_key_fromfile with NULL directory=%s", __FILE__, __LINE__, __FUNCTION__, NULL);
 		RETERR(dst_key_fromfile(name, (dns_keytag_t) n, DNS_KEYALG_DH,
 					type, NULL, mctx, &tctx->dhkey));
 	}

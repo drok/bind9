@@ -46,6 +46,8 @@ AC_PROG_LIBTOOL
 AC_PROG_INSTALL
 AC_PROG_LN_S
 
+PKG_PROG_PKG_CONFIG
+
 AC_SUBST(STD_CINCLUDES)
 AC_SUBST(STD_CDEFINES)
 AC_SUBST(STD_CWARNINGS)
@@ -506,6 +508,17 @@ yes)
 esac
 AC_SUBST(RRLLINKOBJS)
 AC_SUBST(RRLLINKSRCS)
+
+#
+# check if we have valgrind
+#
+AC_ARG_ENABLE(valgrind,
+	[  --enable-valgrind         add Valgrind instrumentation when available [[default=no]]],
+	      want_valgrind="$enableval",  want_valgrind="no")
+if test "$want_valgrind" = "yes" ; then
+    PKG_CHECK_MODULES([VALGRIND], valgrind)
+    AC_DEFINE(HAVE_VALGRIND, 1, [Whether valgrind extensions should be used for debugging])
+fi
 
 #
 # check if we have kqueue

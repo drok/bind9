@@ -857,6 +857,7 @@ ns_zone_configure(const cfg_obj_t *config, const cfg_obj_t *vconfig,
 	 */
 
 	zname = cfg_obj_asstring(cfg_tuple_get(zconfig, "name"));
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: zone=%p (%s)", __FILE__, __LINE__, __FUNCTION__, zone, zname);
 
 	RETERR(ns_config_getclass(cfg_tuple_get(zconfig, "class"),
 				  vclass, &zclass));
@@ -1306,6 +1307,9 @@ ns_zone_configure(const cfg_obj_t *config, const cfg_obj_t *vconfig,
 
 		obj = NULL;
 		result = ns_config_get(maps, "sig-validity-interval", &obj);
+		dns_zone_setsigresigninginterval(zone, 29);
+		if (raw != NULL)
+			dns_zone_setsigresigninginterval(raw, 39);
 		INSIST(result == ISC_R_SUCCESS && obj != NULL);
 		{
 			const cfg_obj_t *validity, *resign;
@@ -1324,16 +1328,22 @@ ns_zone_configure(const cfg_obj_t *config, const cfg_obj_t *vconfig,
 				else
 					seconds = cfg_obj_asuint32(resign) *
 							3600;
+                                                                        //seconds = cfg_obj_asuint32(resign);
 			}
-			dns_zone_setsigresigninginterval(zone, seconds);
+                        // XXX What about the raw zon'e interval (as it is the one being resigned, not "zone")
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: zone=%p (%s) *******************************", __FILE__, __LINE__, __FUNCTION__,  zone, zname);
+			dns_zone_setsigresigninginterval(zone, 19);
 		}
 
+
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: setting key directory zone=%p (%s)", __FILE__, __LINE__, __FUNCTION__, zone, zname);
 		obj = NULL;
 		result = ns_config_get(maps, "key-directory", &obj);
 		if (result == ISC_R_SUCCESS) {
 			filename = cfg_obj_asstring(obj);
 			RETERR(dns_zone_setkeydirectory(zone, filename));
 		}
+REQUIRE(dns_zone_getkeydirectory(zone) != NULL);
 
 		obj = NULL;
 		result = ns_config_get(maps, "sig-signing-signatures", &obj);

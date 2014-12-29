@@ -391,6 +391,7 @@ keythatsigned(dns_rdata_rrsig_t *rrsig) {
 		return (key);
 	}
 
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: calling  dst_key_fromfile with directory=%s", __FILE__, __LINE__, __FUNCTION__, directory);
 	result = dst_key_fromfile(&rrsig->signer, rrsig->keyid,
 				  rrsig->algorithm, DST_TYPE_PUBLIC,
 				  directory, mctx, &pubkey);
@@ -399,6 +400,7 @@ keythatsigned(dns_rdata_rrsig_t *rrsig) {
 		return (NULL);
 	}
 
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: calling  dst_key_fromfile with directory=%s", __FILE__, __LINE__, __FUNCTION__, directory);
 	result = dst_key_fromfile(&rrsig->signer, rrsig->keyid,
 				  rrsig->algorithm,
 				  DST_TYPE_PUBLIC | DST_TYPE_PRIVATE,
@@ -2460,6 +2462,7 @@ loadzonekeys(isc_boolean_t preserve_keys, isc_boolean_t load_public) {
 	keyttl = rdataset.ttl;
 
 	/* Load keys corresponding to the existing DNSKEY RRset. */
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: calling  dns_dnssec_keylistfromrdataset with GLOBAL directory=%s", __FILE__, __LINE__, __FUNCTION__, directory);
 	result = dns_dnssec_keylistfromrdataset(gorigin, directory, mctx,
 						&rdataset, &keysigs, &soasigs,
 						preserve_keys, load_public,

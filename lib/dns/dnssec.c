@@ -682,6 +682,7 @@ dns_dnssec_findzonekeys2(dns_db_t *db, dns_dbversion_t *ver,
 	REQUIRE(keys != NULL);
 
 	isc_stdtime_get(&now);
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: directory=%s", __FILE__, __LINE__, __FUNCTION__, directory);
 
 	*nkeys = 0;
 	memset(keys, 0, sizeof(*keys) * maxkeys);
@@ -702,6 +703,7 @@ dns_dnssec_findzonekeys2(dns_db_t *db, dns_dbversion_t *ver,
 		if (!dns_name_equal(name, dst_key_name(pubkey)))
 			goto next;
 		keys[count] = NULL;
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: calling  dst_key_fromfile with directory=%s", __FILE__, __LINE__, __FUNCTION__, directory);
 		result = dst_key_fromfile(dst_key_name(pubkey),
 					  dst_key_id(pubkey),
 					  dst_key_alg(pubkey),
@@ -720,6 +722,7 @@ dns_dnssec_findzonekeys2(dns_db_t *db, dns_dbversion_t *ver,
 			if ((flags & DNS_KEYFLAG_REVOKE) != 0) {
 				dst_key_setflags(pubkey,
 						 flags & ~DNS_KEYFLAG_REVOKE);
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: calling  dst_key_fromfile with directory=%s", __FILE__, __LINE__, __FUNCTION__, directory);
 				result = dst_key_fromfile(dst_key_name(pubkey),
 							  dst_key_id(pubkey),
 							  dst_key_alg(pubkey),
@@ -816,6 +819,7 @@ dns_dnssec_findzonekeys(dns_db_t *db, dns_dbversion_t *ver,
 			unsigned int maxkeys, dst_key_t **keys,
 			unsigned int *nkeys)
 {
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: calling  dns_dnssec_findzonekeys2 with NULL directory=%s", __FILE__, __LINE__, __FUNCTION__, NULL);
 	return (dns_dnssec_findzonekeys2(db, ver, node, name, NULL, mctx,
 					 maxkeys, keys, nkeys));
 }
@@ -1556,6 +1560,7 @@ dns_dnssec_keylistfromrdataset(dns_name_t *origin,
 			goto skip;
 		}
 
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: calling  dst_key_fromfile with directory=%s", __FILE__, __LINE__, __FUNCTION__, directory);
 		result = dst_key_fromfile(dst_key_name(pubkey),
 					  dst_key_id(pubkey),
 					  dst_key_alg(pubkey),
@@ -1573,6 +1578,7 @@ dns_dnssec_keylistfromrdataset(dns_name_t *origin,
 			if ((flags & DNS_KEYFLAG_REVOKE) != 0) {
 				dst_key_setflags(pubkey,
 						 flags & ~DNS_KEYFLAG_REVOKE);
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: calling  dst_key_fromfile with directory=%s", __FILE__, __LINE__, __FUNCTION__, directory);
 				result = dst_key_fromfile(dst_key_name(pubkey),
 							  dst_key_id(pubkey),
 							  dst_key_alg(pubkey),

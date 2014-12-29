@@ -7345,9 +7345,11 @@ getsigningtime(dns_db_t *db, dns_rdataset_t *rdataset,
 	unsigned int i;
 	isc_result_t result = ISC_R_NOTFOUND;
 	unsigned int locknum;
+	char namestr[80];
 
 	REQUIRE(VALID_RBTDB(rbtdb));
 
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s", __FILE__, __LINE__, __FUNCTION__);
 	RWLOCK(&rbtdb->tree_lock, isc_rwlocktype_read);
 
 	for (i = 0; i < rbtdb->node_lock_count; i++) {
@@ -7374,9 +7376,13 @@ getsigningtime(dns_db_t *db, dns_rdataset_t *rdataset,
 		goto unlock;
 
 	bind_rdataset(rbtdb, header->node, header, 0, rdataset);
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "-- --------- %s:%u:%s foundname=%p", __FILE__, __LINE__, __FUNCTION__, foundname);
 
-	if (foundname != NULL)
+	if (foundname != NULL) {
+		dns_name_format(foundname, namestr, sizeof(namestr));
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s foundname=%p (%s)", __FILE__, __LINE__, __FUNCTION__, foundname, namestr);
 		dns_rbt_fullnamefromnode(header->node, foundname);
+	}
 
 	NODE_UNLOCK(&rbtdb->node_locks[header->node->locknum].lock,
 		    isc_rwlocktype_read);

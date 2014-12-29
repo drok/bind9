@@ -1051,6 +1051,7 @@ find_zone_keys(dns_zone_t *zone, dns_db_t *db, dns_dbversion_t *ver,
 	dns_dbnode_t *node = NULL;
 	const char *directory = dns_zone_getkeydirectory(zone);
 	CHECK(dns_db_findnode(db, dns_db_origin(db), ISC_FALSE, &node));
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: calling  dns_dnssec_findzonekeys2 with directory=%s", __FILE__, __LINE__, __FUNCTION__, directory);
 	CHECK(dns_dnssec_findzonekeys2(db, ver, node, dns_db_origin(db),
 				       directory, mctx, maxkeys, keys, nkeys));
  failure:
