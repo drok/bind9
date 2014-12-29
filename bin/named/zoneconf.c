@@ -1333,6 +1333,8 @@ ns_zone_configure(const cfg_obj_t *config, const cfg_obj_t *vconfig,
 		if (result == ISC_R_SUCCESS) {
 			filename = cfg_obj_asstring(obj);
 			RETERR(dns_zone_setkeydirectory(zone, filename));
+                                                         if (raw != NULL)
+				RETERR(dns_zone_setkeydirectory(mayberaw, filename));
 		}
 
 		obj = NULL;

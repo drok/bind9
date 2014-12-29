@@ -4154,7 +4154,9 @@ configure_zone(const cfg_obj_t *config, const cfg_obj_t *zconfig,
 			CHECK(dns_zone_link(zone, raw));
 		}
 	}
-
+//XXX RACE CONDITION
+// the dns_zone_link call above initiates a zone_timer on the raw zone, which is not yet configured
+// by ns_zone_configure yet.
 	/*
 	 * Configure the zone.
 	 */
