@@ -1342,6 +1342,8 @@ isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_W
 		if (result == ISC_R_SUCCESS) {
 			filename = cfg_obj_asstring(obj);
 			RETERR(dns_zone_setkeydirectory(zone, filename));
+                                                         if (raw != NULL)
+				RETERR(dns_zone_setkeydirectory(mayberaw, filename));
 		}
 REQUIRE(dns_zone_getkeydirectory(zone) != NULL);
 
