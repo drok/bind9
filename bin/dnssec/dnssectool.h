@@ -93,5 +93,5 @@ is_delegation(dns_db_t *db, dns_dbversion_t *ver, dns_name_t *origin,
 void
 verifyzone(dns_db_t *db, dns_dbversion_t *ver,
 		   dns_name_t *origin, isc_mem_t *mctx,
-		   isc_boolean_t ignore_kskflag, isc_boolean_t keyset_kskonly);
+		   isc_boolean_t ignore_kskflag, isc_boolean_t keyset_kskonly, isc_stdtime_t now);
 #endif /* DNSSEC_DNSSECTOOL_H */

@@ -373,8 +373,18 @@ dns_dnssec_verify2(dns_name_t *name, dns_rdataset_t *set, dst_key_t *key,
 		   isc_boolean_t ignoretime, isc_mem_t *mctx,
 		   dns_rdata_t *sigrdata, dns_name_t *wild)
 {
-	return (dns_dnssec_verify3(name, set, key, ignoretime, 0, mctx,
-				   sigrdata, wild));
+	isc_stdtime_t now;
+	isc_stdtime_get(&now);
+	return (dns_dnssec_verify3_asof(name, set, key, ignoretime, 0, mctx,
+				   sigrdata, wild, now));
+}
+isc_result_t
+dns_dnssec_verify2_asof(dns_name_t *name, dns_rdataset_t *set, dst_key_t *key,
+		   isc_boolean_t ignoretime, isc_mem_t *mctx,
+		   dns_rdata_t *sigrdata, dns_name_t *wild, isc_stdtime_t now)
+{
+	return (dns_dnssec_verify3_asof(name, set, key, ignoretime, 0, mctx,
+				   sigrdata, wild, now));
 }
 
 isc_result_t
@@ -382,13 +392,21 @@ dns_dnssec_verify3(dns_name_t *name, dns_rdataset_t *set, dst_key_t *key,
 		   isc_boolean_t ignoretime, unsigned int maxbits,
 		   isc_mem_t *mctx, dns_rdata_t *sigrdata, dns_name_t *wild)
 {
+	isc_stdtime_t now;
+	isc_stdtime_get(&now);
+	return dns_dnssec_verify3_asof(name, set, key, ignoretime, maxbits, mctx, sigrdata, wild, now);
+}
+isc_result_t
+dns_dnssec_verify3_asof(dns_name_t *name, dns_rdataset_t *set, dst_key_t *key,
+		   isc_boolean_t ignoretime, unsigned int maxbits,
+		   isc_mem_t *mctx, dns_rdata_t *sigrdata, dns_name_t *wild, isc_stdtime_t now)
+{
 	dns_rdata_rrsig_t sig;
 	dns_fixedname_t fnewname;
 	isc_region_t r;
 	isc_buffer_t envbuf;
 	dns_rdata_t *rdatas;
 	int nrdatas, i;
-	isc_stdtime_t now;
 	isc_result_t ret;
 	unsigned char data[300];
 	dst_context_t *ctx = NULL;
@@ -415,8 +433,6 @@ dns_dnssec_verify3(dns_name_t *name, dns_rdataset_t *set, dst_key_t *key,
 	}
 
 	if (!ignoretime) {
-		isc_stdtime_get(&now);
-
 		/*
 		 * Is SIG temporally valid?
 		 */
@@ -600,10 +616,19 @@ dns_dnssec_verify(dns_name_t *name, dns_rdataset_t *set, dst_key_t *key,
 		  isc_boolean_t ignoretime, isc_mem_t *mctx,
 		  dns_rdata_t *sigrdata)
 {
+	isc_stdtime_t now;
+	isc_stdtime_get(&now);
+	return dns_dnssec_verify_asof(name, set, key, ignoretime, mctx, sigrdata, now);
+}
+isc_result_t
+dns_dnssec_verify_asof(dns_name_t *name, dns_rdataset_t *set, dst_key_t *key,
+		  isc_boolean_t ignoretime, isc_mem_t *mctx,
+		  dns_rdata_t *sigrdata, isc_stdtime_t now)
+{
 	isc_result_t result;
 
-	result = dns_dnssec_verify2(name, set, key, ignoretime, mctx,
-				    sigrdata, NULL);
+	result = dns_dnssec_verify2_asof(name, set, key, ignoretime, mctx,
+				    sigrdata, NULL, now);
 	if (result == DNS_R_FROMWILDCARD)
 		result = ISC_R_SUCCESS;
 	return (result);
@@ -1095,6 +1120,16 @@ dns_dnssec_selfsigns(dns_rdata_t *rdata, dns_name_t *name,
 		     dns_rdataset_t *rdataset, dns_rdataset_t *sigrdataset,
 		     isc_boolean_t ignoretime, isc_mem_t *mctx)
 {
+	isc_stdtime_t now;
+	isc_stdtime_get(&now);
+	return dns_dnssec_selfsigns_asof(rdata, name, rdataset, sigrdataset, ignoretime, mctx, now);
+
+}
+isc_boolean_t
+dns_dnssec_selfsigns_asof(dns_rdata_t *rdata, dns_name_t *name,
+		     dns_rdataset_t *rdataset, dns_rdataset_t *sigrdataset,
+		     isc_boolean_t ignoretime, isc_mem_t *mctx, isc_stdtime_t now)
+{
 	INSIST(rdataset->type == dns_rdatatype_key ||
 	       rdataset->type == dns_rdatatype_dnskey);
 	if (rdataset->type == dns_rdatatype_key) {
@@ -1105,8 +1140,8 @@ dns_dnssec_selfsigns(dns_rdata_t *rdata, dns_name_t *name,
 		INSIST(sigrdataset->covers == dns_rdatatype_dnskey);
 	}
 
-	return (dns_dnssec_signs(rdata, name, rdataset, sigrdataset,
-				 ignoretime, mctx));
+	return (dns_dnssec_signs_asof(rdata, name, rdataset, sigrdataset,
+				 ignoretime, mctx, now));
 
 }
 
@@ -1114,6 +1149,16 @@ isc_boolean_t
 dns_dnssec_signs(dns_rdata_t *rdata, dns_name_t *name,
 		     dns_rdataset_t *rdataset, dns_rdataset_t *sigrdataset,
 		     isc_boolean_t ignoretime, isc_mem_t *mctx)
+{
+	isc_stdtime_t now;
+	isc_stdtime_get(&now);
+	return dns_dnssec_signs_asof(rdata, name, rdataset, sigrdataset, ignoretime, mctx, now);
+
+}
+isc_boolean_t
+dns_dnssec_signs_asof(dns_rdata_t *rdata, dns_name_t *name,
+		     dns_rdataset_t *rdataset, dns_rdataset_t *sigrdataset,
+		     isc_boolean_t ignoretime, isc_mem_t *mctx, isc_stdtime_t now)
 {
 	dst_key_t *dstkey = NULL;
 	dns_keytag_t keytag;
@@ -1144,9 +1189,9 @@ dns_dnssec_signs(dns_rdata_t *rdata, dns_name_t *name,
 
 		if (sig.algorithm == key.algorithm &&
 		    sig.keyid == keytag) {
-			result = dns_dnssec_verify2(name, rdataset, dstkey,
+			result = dns_dnssec_verify2_asof(name, rdataset, dstkey,
 						    ignoretime, mctx,
-						    &sigrdata, NULL);
+						    &sigrdata, NULL, now);
 			if (result == ISC_R_SUCCESS) {
 				dst_key_free(&dstkey);
 				return (ISC_TRUE);
@@ -1307,6 +1352,15 @@ isc_result_t
 dns_dnssec_findmatchingkeys(dns_name_t *origin, const char *directory,
 			    isc_mem_t *mctx, dns_dnsseckeylist_t *keylist)
 {
+	isc_stdtime_t now;
+	isc_stdtime_get(&now);
+	return dns_dnssec_findmatchingkeys_asof(origin, directory, mctx, keylist, now);
+}
+
+isc_result_t
+dns_dnssec_findmatchingkeys_asof(dns_name_t *origin, const char *directory,
+			    isc_mem_t *mctx, dns_dnsseckeylist_t *keylist, isc_stdtime_t now)
+{
 	isc_result_t result = ISC_R_SUCCESS;
 	isc_boolean_t dir_open = ISC_FALSE;
 	dns_dnsseckeylist_t list;
@@ -1316,7 +1370,6 @@ dns_dnssec_findmatchingkeys(dns_name_t *origin, const char *directory,
 	char namebuf[DNS_NAME_FORMATSIZE];
 	isc_buffer_t b;
 	unsigned int len, i;
-	isc_stdtime_t now;
 
 	REQUIRE(keylist != NULL);
 	ISC_LIST_INIT(list);
@@ -1331,8 +1384,6 @@ dns_dnssec_findmatchingkeys(dns_name_t *origin, const char *directory,
 		directory = ".";
 	RETERR(isc_dir_open(&dir, directory));
 	dir_open = ISC_TRUE;
-
-	isc_stdtime_get(&now);
 
 	while (isc_dir_read(&dir) == ISC_R_SUCCESS) {
 		if (dir.entry.name[0] != 'K' ||

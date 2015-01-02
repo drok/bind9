@@ -308,7 +308,7 @@ main(int argc, char *argv[]) {
 	check_result(result, "dns_db_newversion()");
 
 	verifyzone(gdb, gversion, gorigin, mctx,
-		   ignore_kskflag, keyset_kskonly);
+		   ignore_kskflag, keyset_kskonly, now);
 
 	dns_db_closeversion(gdb, &gversion, ISC_FALSE);
 	dns_db_detach(&gdb);

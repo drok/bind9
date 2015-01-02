@@ -124,15 +124,27 @@ dns_dnssec_sign(dns_name_t *name, dns_rdataset_t *set, dst_key_t *key,
  */
 
 isc_result_t
+dns_dnssec_verify_asof(dns_name_t *name, dns_rdataset_t *set, dst_key_t *key,
+		  isc_boolean_t ignoretime, isc_mem_t *mctx,
+		  dns_rdata_t *sigrdata, isc_stdtime_t now);
+isc_result_t
 dns_dnssec_verify(dns_name_t *name, dns_rdataset_t *set, dst_key_t *key,
 		  isc_boolean_t ignoretime, isc_mem_t *mctx,
 		  dns_rdata_t *sigrdata);
 
 isc_result_t
+dns_dnssec_verify2_asof(dns_name_t *name, dns_rdataset_t *set, dst_key_t *key,
+		   isc_boolean_t ignoretime, isc_mem_t *mctx,
+		   dns_rdata_t *sigrdata, dns_name_t *wild, isc_stdtime_t now);
+isc_result_t
 dns_dnssec_verify2(dns_name_t *name, dns_rdataset_t *set, dst_key_t *key,
 		   isc_boolean_t ignoretime, isc_mem_t *mctx,
 		   dns_rdata_t *sigrdata, dns_name_t *wild);
 
+isc_result_t
+dns_dnssec_verify3_asof(dns_name_t *name, dns_rdataset_t *set, dst_key_t *key,
+		   isc_boolean_t ignoretime, unsigned int maxbits,
+		   isc_mem_t *mctx, dns_rdata_t *sigrdata, dns_name_t *wild, isc_stdtime_t now);
 isc_result_t
 dns_dnssec_verify3(dns_name_t *name, dns_rdataset_t *set, dst_key_t *key,
 		   isc_boolean_t ignoretime, unsigned int maxbits,
@@ -243,11 +255,19 @@ dns_dnssec_verifymessage(isc_buffer_t *source, dns_message_t *msg,
  */
 
 isc_boolean_t
+dns_dnssec_selfsigns_asof(dns_rdata_t *rdata, dns_name_t *name,
+		     dns_rdataset_t *rdataset, dns_rdataset_t *sigrdataset,
+		     isc_boolean_t ignoretime, isc_mem_t *mctx, isc_stdtime_t now);
+isc_boolean_t
 dns_dnssec_selfsigns(dns_rdata_t *rdata, dns_name_t *name,
 		     dns_rdataset_t *rdataset, dns_rdataset_t *sigrdataset,
 		     isc_boolean_t ignoretime, isc_mem_t *mctx);
 
 
+isc_boolean_t
+dns_dnssec_signs_asof(dns_rdata_t *rdata, dns_name_t *name,
+		 dns_rdataset_t *rdataset, dns_rdataset_t *sigrdataset,
+		 isc_boolean_t ignoretime, isc_mem_t *mctx, isc_stdtime_t now);
 isc_boolean_t
 dns_dnssec_signs(dns_rdata_t *rdata, dns_name_t *name,
 		 dns_rdataset_t *rdataset, dns_rdataset_t *sigrdataset,
@@ -287,6 +307,9 @@ dns_dnsseckey_destroy(isc_mem_t *mctx, dns_dnsseckey_t **dkp);
  *\li		'*dkp' is NULL.
  */
 
+isc_result_t
+dns_dnssec_findmatchingkeys_asof(dns_name_t *origin, const char *directory,
+			    isc_mem_t *mctx, dns_dnsseckeylist_t *keylist, isc_stdtime_t now);
 isc_result_t
 dns_dnssec_findmatchingkeys(dns_name_t *origin, const char *directory,
 			    isc_mem_t *mctx, dns_dnsseckeylist_t *keylist);
