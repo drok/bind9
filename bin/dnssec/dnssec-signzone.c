@@ -2543,7 +2543,7 @@ report(const char *format, ...) {
 }
 
 static void
-build_final_keylist() {
+build_final_keylist( isc_stdtime_t starttime) {
 	isc_result_t result;
 	dns_dbversion_t *ver = NULL;
 	dns_diff_t diff;
@@ -2554,11 +2554,11 @@ build_final_keylist() {
 	 * Find keys that match this zone in the key repository.
 	 */
 	ISC_LIST_INIT(matchkeys);
-	result = dns_dnssec_findmatchingkeys(gorigin, directory,
-					     mctx, &matchkeys);
+	result = dns_dnssec_findmatchingkeys_asof(gorigin, directory,
+					     mctx, &matchkeys, starttime);
 	if (result == ISC_R_NOTFOUND)
 		result = ISC_R_SUCCESS;
-	check_result(result, "dns_dnssec_findmatchingkeys");
+	check_result(result, "dns_dnssec_findmatchingkeys_asof");
 
 	result = dns_db_newversion(gdb, &ver);
 	check_result(result, "dns_db_newversion");
@@ -3528,7 +3528,7 @@ main(int argc, char *argv[]) {
 	 * we have now.
 	 */
 	if (smartsign)
-		build_final_keylist();
+		build_final_keylist(starttime);
 
 	/* Now enumerate the key list */
 	for (key = ISC_LIST_HEAD(keylist);
@@ -3691,7 +3691,7 @@ main(int argc, char *argv[]) {
 
 	if (!disable_zone_check)
 		verifyzone(gdb, gversion, gorigin, mctx,
-			   ignore_kskflag, keyset_kskonly);
+			   ignore_kskflag, keyset_kskonly, starttime);
 
 	if (outputformat != dns_masterformat_text) {
 		dns_masterrawheader_t header;

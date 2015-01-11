@@ -524,7 +524,7 @@ is_delegation(dns_db_t *db, dns_dbversion_t *ver, dns_name_t *origin,
 
 static isc_boolean_t
 goodsig(dns_name_t *origin, dns_rdata_t *sigrdata, dns_name_t *name,
-	dns_rdataset_t *keyrdataset, dns_rdataset_t *rdataset, isc_mem_t *mctx)
+	dns_rdataset_t *keyrdataset, dns_rdataset_t *rdataset, isc_mem_t *mctx, isc_stdtime_t now)
 {
 	dns_rdata_dnskey_t key;
 	dns_rdata_rrsig_t sig;
@@ -551,8 +551,8 @@ goodsig(dns_name_t *origin, dns_rdata_t *sigrdata, dns_name_t *name,
 			dst_key_free(&dstkey);
 			continue;
 		}
-		result = dns_dnssec_verify(name, rdataset, dstkey, ISC_FALSE,
-					   mctx, sigrdata);
+		result = dns_dnssec_verify_asof(name, rdataset, dstkey, ISC_FALSE,
+					   mctx, sigrdata, now);
 		dst_key_free(&dstkey);
 		if (result == ISC_R_SUCCESS)
 			return(ISC_TRUE);
@@ -1055,7 +1055,7 @@ static void
 verifyset(dns_db_t *db, dns_dbversion_t *ver, dns_name_t *origin,
 	  isc_mem_t *mctx, dns_rdataset_t *rdataset, dns_name_t *name,
 	  dns_dbnode_t *node, dns_rdataset_t *keyrdataset,
-	  unsigned char *act_algorithms, unsigned char *bad_algorithms)
+	  unsigned char *act_algorithms, unsigned char *bad_algorithms, isc_stdtime_t now)
 {
 	unsigned char set_algorithms[256];
 	char namebuf[DNS_NAME_FORMATSIZE];
@@ -1109,7 +1109,7 @@ verifyset(dns_db_t *db, dns_dbversion_t *ver, dns_name_t *origin,
 		if ((set_algorithms[sig.algorithm] != 0) ||
 		    (act_algorithms[sig.algorithm] == 0))
 			continue;
-		if (goodsig(origin, &rdata, name, keyrdataset, rdataset, mctx))
+		if (goodsig(origin, &rdata, name, keyrdataset, rdataset, mctx, now))
 			set_algorithms[sig.algorithm] = 1;
 	}
 	dns_rdatasetiter_destroy(&rdsiter);
@@ -1134,7 +1134,7 @@ verifynode(dns_db_t *db, dns_dbversion_t *ver, dns_name_t *origin,
 	   isc_boolean_t delegation, dns_rdataset_t *keyrdataset,
 	   unsigned char *act_algorithms, unsigned char *bad_algorithms,
 	   dns_rdataset_t *nsecset, dns_rdataset_t *nsec3paramset,
-	   dns_name_t *nextname)
+	   dns_name_t *nextname, isc_stdtime_t now)
 {
 	unsigned char types[8192];
 	unsigned int maxtype = 0;
@@ -1161,7 +1161,7 @@ verifynode(dns_db_t *db, dns_dbversion_t *ver, dns_name_t *origin,
 		     rdataset.type == dns_rdatatype_nsec)) {
 			verifyset(db, ver, origin, mctx, &rdataset,
 				  name, node, keyrdataset,
-				  act_algorithms, bad_algorithms);
+				  act_algorithms, bad_algorithms, now);
 			dns_nsec_setbit(types, rdataset.type, 1);
 			if (rdataset.type > maxtype)
 				maxtype = rdataset.type;
@@ -1428,7 +1428,7 @@ verifyemptynodes(dns_db_t *db, dns_dbversion_t *ver, dns_name_t *origin,
 void
 verifyzone(dns_db_t *db, dns_dbversion_t *ver,
 	   dns_name_t *origin, isc_mem_t *mctx,
-	   isc_boolean_t ignore_kskflag, isc_boolean_t keyset_kskonly)
+	   isc_boolean_t ignore_kskflag, isc_boolean_t keyset_kskonly, isc_stdtime_t now)
 {
 	char algbuf[80];
 	dns_dbiterator_t *dbiter = NULL;
@@ -1541,9 +1541,9 @@ verifyzone(dns_db_t *db, dns_dbversion_t *ver,
 			;
 		else if ((dnskey.flags & DNS_KEYFLAG_REVOKE) != 0) {
 			if ((dnskey.flags & DNS_KEYFLAG_KSK) != 0 &&
-			    !dns_dnssec_selfsigns(&rdata, origin, &keyset,
+			    !dns_dnssec_selfsigns_asof(&rdata, origin, &keyset,
 						  &keysigs, ISC_FALSE,
-						  mctx)) {
+						  mctx, now)) {
 				char namebuf[DNS_NAME_FORMATSIZE];
 				char buffer[1024];
 				isc_buffer_t buf;
@@ -1564,8 +1564,8 @@ verifyzone(dns_db_t *db, dns_dbversion_t *ver,
 				 revoked_zsk[dnskey.algorithm] != 255)
 				revoked_zsk[dnskey.algorithm]++;
 		} else if ((dnskey.flags & DNS_KEYFLAG_KSK) != 0) {
-			if (dns_dnssec_selfsigns(&rdata, origin, &keyset,
-						 &keysigs, ISC_FALSE, mctx)) {
+			if (dns_dnssec_selfsigns_asof(&rdata, origin, &keyset,
+						 &keysigs, ISC_FALSE, mctx, now)) {
 				if (ksk_algorithms[dnskey.algorithm] != 255)
 					ksk_algorithms[dnskey.algorithm]++;
 				goodksk = ISC_TRUE;
@@ -1573,13 +1573,13 @@ verifyzone(dns_db_t *db, dns_dbversion_t *ver,
 				if (standby_ksk[dnskey.algorithm] != 255)
 					standby_ksk[dnskey.algorithm]++;
 			}
-		} else if (dns_dnssec_selfsigns(&rdata, origin, &keyset,
-						&keysigs, ISC_FALSE, mctx)) {
+		} else if (dns_dnssec_selfsigns_asof(&rdata, origin, &keyset,
+						&keysigs, ISC_FALSE, mctx, now)) {
 			if (zsk_algorithms[dnskey.algorithm] != 255)
 				zsk_algorithms[dnskey.algorithm]++;
 			goodzsk = ISC_TRUE;
-		} else if (dns_dnssec_signs(&rdata, origin, &soaset,
-					    &soasigs, ISC_FALSE, mctx)) {
+		} else if (dns_dnssec_signs_asof(&rdata, origin, &soaset,
+					    &soasigs, ISC_FALSE, mctx, now)) {
 			if (zsk_algorithms[dnskey.algorithm] != 255)
 				zsk_algorithms[dnskey.algorithm]++;
 		} else {
@@ -1709,7 +1709,7 @@ verifyzone(dns_db_t *db, dns_dbversion_t *ver,
 		result = verifynode(db, ver, origin, mctx, name, node,
 				    isdelegation, &keyset, act_algorithms,
 				    bad_algorithms, &nsecset, &nsec3paramset,
-				    nextname);
+				    nextname, now);
 		if (vresult == ISC_R_UNSET)
 			vresult = ISC_R_SUCCESS;
 		if (vresult == ISC_R_SUCCESS && result != ISC_R_SUCCESS)
@@ -1738,7 +1738,7 @@ verifyzone(dns_db_t *db, dns_dbversion_t *ver,
 		check_dns_dbiterator_current(result);
 		result = verifynode(db, ver, origin, mctx, name, node,
 				    ISC_FALSE, &keyset, act_algorithms,
-				    bad_algorithms, NULL, NULL, NULL);
+				    bad_algorithms, NULL, NULL, NULL, now);
 		check_result(result, "verifynode");
 		record_found(db, ver, mctx, name, node, &nsec3paramset);
 		dns_db_detachnode(db, &node);
