@@ -1104,8 +1104,11 @@ add_sigs(dns_update_log_t *log, dns_zone_t *zone, dns_db_t *db,
 	for (i = 0; i < nkeys; i++) {
 		isc_boolean_t both = ISC_FALSE;
 
-		if (!dst_key_isprivate(keys[i]))
+		if (!dst_key_isprivate(keys[i])) {
+			if (KSK(keys[i]))
+				added_sig = ISC_TRUE;
 			continue;
+		}
 
 		if (check_ksk && !REVOKE(keys[i])) {
 			isc_boolean_t have_ksk, have_nonksk;
