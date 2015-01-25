@@ -5302,6 +5302,7 @@ offline(dns_db_t *db, dns_dbversion_t *ver, zonediff_t *zonediff,
 	dns_name_t *name, dns_ttl_t ttl, dns_rdata_t *rdata)
 {
 	isc_result_t result;
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "-off------- %s:%u:%s", __FILE__, __LINE__, __FUNCTION__);
 
 	if ((rdata->flags & DNS_RDATA_OFFLINE) != 0)
 		return (ISC_R_SUCCESS);
@@ -5454,9 +5455,15 @@ del_sigs(dns_zone_t *zone, dns_db_t *db, dns_dbversion_t *ver, dns_name_t *name,
 		if (type != dns_rdatatype_dnskey) {
 			isc_boolean_t warn = ISC_FALSE, deleted = ISC_FALSE;
 			if (delsig_ok(&rrsig, keys, nkeys, &warn)) {
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "-sss------- %s:%u:%s zone=%p: delsig_ok=true rrsig of key#%u", __FILE__, __LINE__, __FUNCTION__, zone,
+	rrsig.keyid
+	);
 				result = update_one_rr(db, ver, zonediff->diff,
 					       DNS_DIFFOP_DELRESIGN, name,
 					       rdataset.ttl, &rdata);
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "-sss------- %s:%u:%s zone=%p: delsig_ok=true rrsig of key#%u -> %u warn=%u", __FILE__, __LINE__, __FUNCTION__, zone,
+	rrsig.keyid, result, warn
+	);
 				if (incremental)
 					changed = ISC_TRUE;
 				if (result != ISC_R_SUCCESS)
@@ -5538,6 +5545,8 @@ del_sigs(dns_zone_t *zone, dns_db_t *db, dns_dbversion_t *ver, dns_name_t *name,
 						warn = maybe;
 					if (warn == 0 || warn > timeexpire)
 						warn = timeexpire;
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "-sss------- %s:%u:%s zone=%p: marking offline rrsig of key%u", __FILE__, __LINE__, __FUNCTION__, zone,
+	rrsig.keyid);
 					result = offline(db, ver, zonediff,
 							 name, rdataset.ttl,
 							 &rdata);
@@ -5556,10 +5565,13 @@ del_sigs(dns_zone_t *zone, dns_db_t *db, dns_dbversion_t *ver, dns_name_t *name,
 		 * If there is not a matching DNSKEY then
 		 * delete the RRSIG.
 		 */
-		if (!found)
+		if (!found) {
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "-sss------- %s:%u:%s: delete rrsig of key%u", __FILE__, __LINE__, __FUNCTION__,
+	rrsig.keyid);
 			result = update_one_rr(db, ver, zonediff->diff,
 					       DNS_DIFFOP_DELRESIGN, name,
 					       rdataset.ttl, &rdata);
+		}
 		if (result != ISC_R_SUCCESS)
 			break;
 	}
@@ -6542,7 +6554,19 @@ need_nsec_chain(dns_db_t *db, dns_dbversion_t *ver,
 	dns_db_detachnode(db, &node);
 	return (result);
 }
+#include "dst_internal.h"
 
+static void
+listkeys(dst_key_t *keys[], unsigned int nkeys)
+{
+	unsigned int i;
+	isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING,
+			"-------- LIST %u KEYS %p -------", nkeys, keys);
+	if (keys) for (i = 0; i < nkeys; i++) {
+		if (VALID_KEY(keys[i])) isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING,
+			"-key------- #%u = key #%u", i, dst_key_id(keys[i]) );
+	}
+}
 static isc_result_t
 update_sigs(dns_diff_t *diff, dns_db_t *db, dns_dbversion_t *version,
 	    dst_key_t *zone_keys[], unsigned int nkeys, dns_zone_t *zone,
@@ -6553,6 +6577,9 @@ update_sigs(dns_diff_t *diff, dns_db_t *db, dns_dbversion_t *version,
 	dns_difftuple_t *tuple;
 	isc_result_t result;
 
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "-sss------- %s:%u:%s zone=%p", __FILE__, __LINE__, __FUNCTION__, zone
+	);
+listkeys(zone_keys, nkeys);
 	for (tuple = ISC_LIST_HEAD(diff->tuples);
 	     tuple != NULL;
 	     tuple = ISC_LIST_HEAD(diff->tuples)) {
@@ -7650,7 +7677,9 @@ isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_W
 isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: zone=%p (%s)", __FILE__, __LINE__, __FUNCTION__, zone, zone->masterfile);
 		dns_dbiterator_pause(signing->dbiterator);
 		for (i = 0; i < nkeys; i++) {
-isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: zone=%p (%s)", __FILE__, __LINE__, __FUNCTION__, zone, zone->masterfile);
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: zone=%p (%s) key#%u %s check_ksk=%u", __FILE__, __LINE__, __FUNCTION__,
+		zone, zone->masterfile, 
+		dst_key_id(zone_keys[i]), dst_key_isprivate(zone_keys[i]) ? "private" : "public", check_ksk);
 			isc_boolean_t both = ISC_FALSE;
 
 			/*
@@ -7920,6 +7949,7 @@ isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_W
 
 	dns_diff_clear(&_sig_diff);
 
+listkeys(zone_keys, nkeys);
 	for (i = 0; i < nkeys; i++)
 		dst_key_free(&zone_keys[i]);
 
@@ -7943,6 +7973,7 @@ isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_W
 isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: zone=%p (%s)            CLEAR SIGN TIMER", __FILE__, __LINE__, __FUNCTION__, zone, zone->masterfile);
 		isc_time_settoepoch(&zone->signingtime);
 	}
+	
 }
 
 static isc_result_t
@@ -11623,7 +11654,7 @@ zone_settimer(dns_zone_t *zone, isc_time_t *now) {
 	if (DNS_ZONE_FLAG(zone, DNS_ZONEFLG_EXITING))
 		return;
 
-isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s:  zone=%p", __FILE__, __LINE__, __FUNCTION__, zone);
+//isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s:  zone=%p", __FILE__, __LINE__, __FUNCTION__, zone);
 	isc_time_settoepoch(&next);
 
 	switch (zone->type) {
@@ -11633,7 +11664,7 @@ isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_W
 		/* FALLTHROUGH */
 
 	case dns_zone_master:
-isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s:  zone=%p", __FILE__, __LINE__, __FUNCTION__, zone);
+//isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s:  zone=%p", __FILE__, __LINE__, __FUNCTION__, zone);
 		if (DNS_ZONE_FLAG(zone, DNS_ZONEFLG_NEEDNOTIFY))
 			next = zone->notifytime;
 		if (DNS_ZONE_FLAG(zone, DNS_ZONEFLG_NEEDDUMP) &&
@@ -12749,6 +12780,7 @@ sync_secure_journal(dns_zone_t *zone, dns_journal_t *journal,
 	dns_diffop_t op = DNS_DIFFOP_ADD;
 	int n_soa = 0;
 
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s:zone=%p", __FILE__, __LINE__, __FUNCTION__, zone);
 	REQUIRE(soatuplep != NULL);
 
 	if (start == end)
@@ -13031,6 +13063,7 @@ receive_secure_serial(isc_task_t *task, isc_event_t *event) {
 		CHECK(update_soa_serial(db, newver, &diff, zone->mctx,
 					zone->updatemethod));
 
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s:zone=%p", __FILE__, __LINE__, __FUNCTION__, zone);
 	CHECK(dns_update_signatures(&log, zone, db, oldver, newver,
 				    &diff, zone->sigvalidityinterval));
 
@@ -16239,6 +16272,8 @@ isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_W
 	}
 
 	if (tuple == NULL) {
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "-sss------- %s:%u:%s zone=%p", __FILE__, __LINE__, __FUNCTION__, zone
+	);
 		result = del_sigs(zone, db, ver, &zone->origin,
 				  dns_rdatatype_dnskey, zonediff,
 				  zone_keys, nkeys, now, ISC_FALSE);
@@ -17047,6 +17082,7 @@ keydone(isc_task_t *task, isc_event_t *event) {
 		CHECK(update_soa_serial(db, newver, &diff, zone->mctx,
 					zone->updatemethod));
 
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s:zone=%p", __FILE__, __LINE__, __FUNCTION__, zone);
 		result = dns_update_signatures(&log, zone, db,
 					       oldver, newver, &diff,
 					       zone->sigvalidityinterval);
@@ -17280,6 +17316,7 @@ setnsec3param(isc_task_t *task, isc_event_t *event) {
 		/* Write changes to journal file. */
 		CHECK(update_soa_serial(db, newver, &diff, zone->mctx,
 					zone->updatemethod));
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s:zone=%p", __FILE__, __LINE__, __FUNCTION__, zone);
 		result = dns_update_signatures(&log, zone, db,
 					       oldver, newver, &diff,
 					       zone->sigvalidityinterval);

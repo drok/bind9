@@ -51,7 +51,7 @@ ISC_INCLUDES = -I/home/radu/proj/bind9/lib/isc/include \
 	-I${top_srcdir}/lib/isc \
 	-I${top_srcdir}/lib/isc/include \
 	-I${top_srcdir}/lib/isc/unix/include \
-	-I${top_srcdir}/lib/isc/nothreads/include \
+	-I${top_srcdir}/lib/isc/pthreads/include \
 	-I${top_srcdir}/lib/isc/x86_32/include
 
 ISCCC_INCLUDES = -I/home/radu/proj/bind9/lib/isccc/include \
@@ -76,14 +76,14 @@ TEST_INCLUDES = \
 CINCLUDES =	-I. -Iinclude ${DNS_INCLUDES} ${ISC_INCLUDES} 
 CDEFINES =	-DOPENSSL -DTESTS="\"${top_builddir}/lib/dns/tests/\""
 
-ISCLIBS =	../../isc/libisc.a
-ISCDEPLIBS =	../../isc/libisc.a
-DNSLIBS =	../libdns.a  -lgssapi_krb5 -lcrypto
-DNSDEPLIBS =	../libdns.a
+ISCLIBS =	../../isc/libisc.la
+ISCDEPLIBS =	../../isc/libisc.la
+DNSLIBS =	../libdns.la  -lgssapi_krb5 -lcrypto
+DNSDEPLIBS =	../libdns.la
 
-LIBS =		-ldl -lcap  -lxml2 -lz -lm 
+LIBS =		-ldl -lcap -lpthread  -lxml2 -lz -lm -L/home/radu/proj/bind9/unit/atf/lib -latf-c
 
-OBJS =		dnstest.o
+OBJS =		dnstest.lo
 SRCS =		db_test.c \
 		dbdiff_test.c \
 		dbiterator_test.c \
@@ -142,18 +142,18 @@ TARGETS =	db_test \
 ### Note: paths that vary by Makefile MUST NOT be listed
 ### here, or they won't get expanded correctly.
 
-prefix =	/usr/local
-exec_prefix =	${prefix}
-bindir =	${exec_prefix}/bin
-sbindir =	${exec_prefix}/sbin
-includedir =	${prefix}/include
-libdir =	${exec_prefix}/lib
+prefix =	/usr
+exec_prefix =	/usr
+bindir =	/usr/bin
+sbindir =	/usr/sbin
+includedir =	/usr/include/bind9
+libdir =	/usr/lib
 sysconfdir =	/etc
 localstatedir =	/var
-mandir =	${datarootdir}/man
+mandir =	/usr/share/man
 datarootdir =   ${prefix}/share
-export_libdir =	${exec_prefix}/lib/bind9/
-export_includedir = ${prefix}/include/bind9/
+export_libdir =	/usr/lib
+export_includedir = /usr/include
 
 DESTDIR =
 
@@ -229,21 +229,21 @@ install clean distclean maintainer-clean doc docclean man manclean::
 CC = 		/usr/bin/gcc
 CFLAGS =	-g3 -gdwarf-2 -I/usr/include/libxml2
 LDFLAGS =	
-STD_CINCLUDES =	
-STD_CDEFINES =	 -D_GNU_SOURCE
+STD_CINCLUDES =	 -I/home/radu/proj/bind9/unit/atf/include
+STD_CDEFINES =	 -DISC_LIST_CHECKINIT=1 -D_GNU_SOURCE
 STD_CWARNINGS =	 -W -Wall -Wmissing-prototypes -Wcast-qual -Wwrite-strings -Wformat -Wpointer-arith -fno-strict-aliasing -fno-delete-null-pointer-checks
 
 BUILD_CC = /usr/bin/gcc
 BUILD_CFLAGS = -g3 -gdwarf-2 -I/usr/include/libxml2
 BUILD_CPPFLAGS =  -D_GNU_SOURCE 
 BUILD_LDFLAGS = 
-BUILD_LIBS = -ldl -lcap  -lxml2 -lz -lm
+BUILD_LIBS = -ldl -lcap -lpthread  -lxml2 -lz -lm
 
 .SUFFIXES:
-.SUFFIXES: .c .o
+.SUFFIXES: .c .lo
 
 ALWAYS_INCLUDES = -I${top_builddir}
-ALWAYS_DEFINES = 
+ALWAYS_DEFINES = -D_REENTRANT
 ALWAYS_WARNINGS =
 
 ALL_CPPFLAGS = \
@@ -253,14 +253,14 @@ ALL_CPPFLAGS = \
 ALL_CFLAGS = ${EXT_CFLAGS} ${ALL_CPPFLAGS} ${CFLAGS} \
 	${ALWAYS_WARNINGS} ${STD_CWARNINGS} ${CWARNINGS}
 
-.c.o:
+%.lo:  ${srcdir}/%.c
 	${LIBTOOL_MODE_COMPILE} ${CC} ${ALL_CFLAGS} -c $<
 
 SHELL = /bin/sh
-LIBTOOL = 
-LIBTOOL_MODE_COMPILE = ${LIBTOOL} 
-LIBTOOL_MODE_INSTALL = ${LIBTOOL} 
-LIBTOOL_MODE_LINK = ${LIBTOOL} 
+LIBTOOL = $(SHELL) $(top_builddir)/libtool
+LIBTOOL_MODE_COMPILE = ${LIBTOOL} --mode=compile --tag=CC
+LIBTOOL_MODE_INSTALL = ${LIBTOOL} --mode=install --tag=CC
+LIBTOOL_MODE_LINK = ${LIBTOOL} --mode=link --tag=CC
 PURIFY = 
 
 MKDEP = ${SHELL} ${top_builddir}/make/mkdep
@@ -316,19 +316,19 @@ FINALBUILDCMD = if [ X"${MKSYMTBL_PROGRAM}" = X -o X"$${MAKE_SYMTABLE:-${ALWAYS_
 		rm -f $@tmp0; \
 		${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${ALL_CFLAGS} ${LDFLAGS} \
 		-o $@tmp0 $${BASEOBJS} $${LIBS0} ${LIBS} || exit 1; \
-		rm -f $@-symtbl.c $@-symtbl.o; \
+		rm -f $@-symtbl.c $@-symtbl.lo; \
 		${MKSYMTBL_PROGRAM} ${top_srcdir}/util/mksymtbl.pl \
 		-o $@-symtbl.c $@tmp0 || exit 1; \
-		$(MAKE) $@-symtbl.o || exit 1; \
+		$(MAKE) $@-symtbl.lo || exit 1; \
 		rm -f $@tmp1; \
 		${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${ALL_CFLAGS} ${LDFLAGS} \
-		-o $@tmp1 $${BASEOBJS} $@-symtbl.o $${LIBS0} ${NOSYMLIBS} || exit 1; \
-		rm -f $@-symtbl.c $@-symtbl.o; \
+		-o $@tmp1 $${BASEOBJS} $@-symtbl.lo $${LIBS0} ${NOSYMLIBS} || exit 1; \
+		rm -f $@-symtbl.c $@-symtbl.lo; \
 		${MKSYMTBL_PROGRAM} ${top_srcdir}/util/mksymtbl.pl \
 		-o $@-symtbl.c $@tmp1 || exit 1; \
-		$(MAKE) $@-symtbl.o || exit 1; \
+		$(MAKE) $@-symtbl.lo || exit 1; \
 		${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${ALL_CFLAGS} ${LDFLAGS} \
-		-o $@tmp2 $${BASEOBJS} $@-symtbl.o $${LIBS0} ${NOSYMLIBS}; \
+		-o $@tmp2 $${BASEOBJS} $@-symtbl.lo $${LIBS0} ${NOSYMLIBS}; \
 		${MKSYMTBL_PROGRAM} ${top_srcdir}/util/mksymtbl.pl \
 		-o $@-symtbl2.c $@tmp2; \
 		count=0; \
@@ -336,12 +336,12 @@ FINALBUILDCMD = if [ X"${MKSYMTBL_PROGRAM}" = X -o X"$${MAKE_SYMTABLE:-${ALWAYS_
 		do \
 			count=`expr $$count + 1` ; \
 			test $$count = 42 && exit 1 ; \
-			rm -f $@-symtbl.c $@-symtbl.o; \
+			rm -f $@-symtbl.c $@-symtbl.lo; \
 			${MKSYMTBL_PROGRAM} ${top_srcdir}/util/mksymtbl.pl \
 			-o $@-symtbl.c $@tmp2 || exit 1; \
-			$(MAKE) $@-symtbl.o || exit 1; \
+			$(MAKE) $@-symtbl.lo || exit 1; \
 			${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${ALL_CFLAGS} \
-			${LDFLAGS} -o $@tmp2 $${BASEOBJS} $@-symtbl.o \
+			${LDFLAGS} -o $@tmp2 $${BASEOBJS} $@-symtbl.lo \
 			$${LIBS0} ${NOSYMLIBS}; \
 			${MKSYMTBL_PROGRAM} ${top_srcdir}/util/mksymtbl.pl \
 			-o $@-symtbl2.c $@tmp2; \
@@ -354,7 +354,7 @@ cleandir: distclean
 superclean: maintainer-clean
 
 clean distclean maintainer-clean::
-	rm -f *.o *.o *.lo *.la core *.core *-symtbl.c *tmp0 *tmp1 *tmp2
+	rm -f *.lo *.o *.lo *.la core *.core *-symtbl.c *tmp0 *tmp1 *tmp2
 	rm -rf .depend .libs
 
 distclean maintainer-clean::
@@ -435,7 +435,7 @@ W3M =			w3m
 ###
 ### Script language program used to create internal symbol tables
 ###
-MKSYMTBL_PROGRAM =	/usr/bin/perl
+MKSYMTBL_PROGRAM =	
 
 ###
 ### Switch to create internal symbol table selectively
@@ -485,7 +485,7 @@ ALWAYS_MAKE_SYMTABLE =
 	chmod +x $@
 
 
-master_test: master_test.o dnstest.o ${ISCDEPLIBS} ${DNSDEPLIBS}
+master_test: master_test.lo dnstest.lo ${ISCDEPLIBS} ${DNSDEPLIBS}
 	test -d testdata || mkdir testdata
 	test -d testdata/master || mkdir testdata/master
 	${PERL} ${srcdir}/mkraw.pl < ${srcdir}/testdata/master/master12.data.in \
@@ -495,71 +495,71 @@ master_test: master_test.o dnstest.o ${ISCDEPLIBS} ${DNSDEPLIBS}
 	${PERL} ${srcdir}/mkraw.pl < ${srcdir}/testdata/master/master14.data.in \
 		> testdata/master/master14.data
 	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ \
-			master_test.o dnstest.o ${DNSLIBS} \
+			master_test.lo dnstest.lo ${DNSLIBS} \
 				${ISCLIBS} ${LIBS}
 
-time_test: time_test.o dnstest.o ${ISCDEPLIBS} ${DNSDEPLIBS}
+time_test: time_test.lo dnstest.lo ${ISCDEPLIBS} ${DNSDEPLIBS}
 	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ \
-			time_test.o dnstest.o ${DNSLIBS} \
+			time_test.lo dnstest.lo ${DNSLIBS} \
 				${ISCLIBS} ${LIBS}
 
-private_test: private_test.o dnstest.o ${ISCDEPLIBS} ${DNSDEPLIBS}
+private_test: private_test.lo dnstest.lo ${ISCDEPLIBS} ${DNSDEPLIBS}
 	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ \
-			private_test.o dnstest.o ${DNSLIBS} \
+			private_test.lo dnstest.lo ${DNSLIBS} \
 				${ISCLIBS} ${LIBS}
 
-update_test: update_test.o dnstest.o ${ISCDEPLIBS} ${DNSDEPLIBS}
+update_test: update_test.lo dnstest.lo ${ISCDEPLIBS} ${DNSDEPLIBS}
 	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ \
-			update_test.o dnstest.o ${DNSLIBS} \
+			update_test.lo dnstest.lo ${DNSLIBS} \
 				${ISCLIBS} ${LIBS}
 
-zonemgr_test: zonemgr_test.o dnstest.o ${ISCDEPLIBS} ${DNSDEPLIBS}
+zonemgr_test: zonemgr_test.lo dnstest.lo ${ISCDEPLIBS} ${DNSDEPLIBS}
 	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ \
-			zonemgr_test.o dnstest.o ${DNSLIBS} \
+			zonemgr_test.lo dnstest.lo ${DNSLIBS} \
 				${ISCLIBS} ${LIBS}
 
-dbiterator_test: dbiterator_test.o dnstest.o ${ISCDEPLIBS} ${DNSDEPLIBS}
+dbiterator_test: dbiterator_test.lo dnstest.lo ${ISCDEPLIBS} ${DNSDEPLIBS}
 	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ \
-			dbiterator_test.o dnstest.o ${DNSLIBS} \
+			dbiterator_test.lo dnstest.lo ${DNSLIBS} \
 				${ISCLIBS} ${LIBS}
 
-dbdiff_test: dbdiff_test.o dnstest.o ${ISCDEPLIBS} ${DNSDEPLIBS}
+dbdiff_test: dbdiff_test.lo dnstest.lo ${ISCDEPLIBS} ${DNSDEPLIBS}
 	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ \
-			dbdiff_test.o dnstest.o ${DNSLIBS} \
+			dbdiff_test.lo dnstest.lo ${DNSLIBS} \
 				${ISCLIBS} ${LIBS}
 
-dbversion_test: dbversion_test.o dnstest.o ${ISCDEPLIBS} ${DNSDEPLIBS}
+dbversion_test: dbversion_test.lo dnstest.lo ${ISCDEPLIBS} ${DNSDEPLIBS}
 	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ \
-			dbversion_test.o dnstest.o ${DNSLIBS} \
+			dbversion_test.lo dnstest.lo ${DNSLIBS} \
 				${ISCLIBS} ${LIBS}
 
-zt_test: zt_test.o dnstest.o ${ISCDEPLIBS} ${DNSDEPLIBS}
+zt_test: zt_test.lo dnstest.lo ${ISCDEPLIBS} ${DNSDEPLIBS}
 	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ \
-			zt_test.o dnstest.o ${DNSLIBS} \
+			zt_test.lo dnstest.lo ${DNSLIBS} \
 				${ISCLIBS} ${LIBS}
 
-nsec3_test: nsec3_test.o dnstest.o ${ISCDEPLIBS} ${DNSDEPLIBS}
+nsec3_test: nsec3_test.lo dnstest.lo ${ISCDEPLIBS} ${DNSDEPLIBS}
 	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ \
-			nsec3_test.o dnstest.o ${DNSLIBS} \
+			nsec3_test.lo dnstest.lo ${DNSLIBS} \
 				${ISCLIBS} ${LIBS}
 				
-rdataset_test: rdataset_test.o dnstest.o ${ISCDEPLIBS} ${DNSDEPLIBS}
+rdataset_test: rdataset_test.lo dnstest.lo ${ISCDEPLIBS} ${DNSDEPLIBS}
 	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ \
-			rdataset_test.o dnstest.o ${DNSLIBS} \
+			rdataset_test.lo dnstest.lo ${DNSLIBS} \
 				${ISCLIBS} ${LIBS}
 
-rdata_test: rdata_test.o ${ISCDEPLIBS} ${DNSDEPLIBS}
+rdata_test: rdata_test.lo ${ISCDEPLIBS} ${DNSDEPLIBS}
 	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ \
-			rdata_test.o ${DNSLIBS} ${ISCLIBS} ${LIBS}
+			rdata_test.lo ${DNSLIBS} ${ISCLIBS} ${LIBS}
 
-dispatch_test: dispatch_test.o dnstest.o ${ISCDEPLIBS} ${DNSDEPLIBS}
+dispatch_test: dispatch_test.lo dnstest.lo ${ISCDEPLIBS} ${DNSDEPLIBS}
 	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ \
-			dispatch_test.o dnstest.o ${DNSLIBS} \
+			dispatch_test.lo dnstest.lo ${DNSLIBS} \
 				${ISCLIBS} ${LIBS}
 
-db_test: db_test.o ${ISCDEPLIBS} ${DNSDEPLIBS}
+db_test: db_test.lo ${ISCDEPLIBS} ${DNSDEPLIBS}
 	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ \
-			db_test.o ${DNSLIBS} \
+			db_test.lo ${DNSLIBS} \
 			${ISCLIBS} ${LIBS}
 
 unit::

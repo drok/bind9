@@ -2047,6 +2047,7 @@ iszonesecure(dns_db_t *db, rbtdb_version_t *version, dns_dbnode_t *origin) {
 	/*
 	 * Do we have a valid NSEC/NSEC3 chain?
 	 */
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "-- --------- %s:%u:%s version->havensec3=%u hasnsec=%u", __FILE__, __LINE__, __FUNCTION__, version->havensec3, hasnsec);
 	if (version->havensec3 || hasnsec)
 		version->secure = dns_db_secure;
 	else
@@ -2102,6 +2103,7 @@ setnsec3parameters(dns_db_t *db, rbtdb_version_t *version) {
 #else
 			raw += 2;
 #endif
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "-- --------- %s:%u:%s count=%u", __FILE__, __LINE__, __FUNCTION__, count);
 			while (count-- > 0U) {
 				length = raw[0] * 256 + raw[1];
 #if DNS_RDATASET_FIXED
@@ -2123,11 +2125,15 @@ setnsec3parameters(dns_db_t *db, rbtdb_version_t *version) {
 				dns_rdata_reset(&rdata);
 
 				if (nsec3param.hash != DNS_NSEC3_UNKNOWNALG &&
-				    !dns_nsec3_supportedhash(nsec3param.hash))
+				    !dns_nsec3_supportedhash(nsec3param.hash)) {
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "-- --------- %s:%u:%s unsuported nsec3 hash", __FILE__, __LINE__, __FUNCTION__);
 					continue;
+				}
 
-				if (nsec3param.flags != 0)
+				if (nsec3param.flags != 0) {
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "-- --------- %s:%u:%s zero nsec3 flags = %u", __FILE__, __LINE__, __FUNCTION__, nsec3param.flags);
 					continue;
+				}
 
 				memmove(version->salt, nsec3param.salt,
 					nsec3param.salt_length);
@@ -7376,11 +7382,9 @@ isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_W
 		goto unlock;
 
 	bind_rdataset(rbtdb, header->node, header, 0, rdataset);
-isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "-- --------- %s:%u:%s foundname=%p", __FILE__, __LINE__, __FUNCTION__, foundname);
 
 	if (foundname != NULL) {
 		dns_name_format(foundname, namestr, sizeof(namestr));
-isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s foundname=%p (%s)", __FILE__, __LINE__, __FUNCTION__, foundname, namestr);
 		dns_rbt_fullnamefromnode(header->node, foundname);
 	}
 

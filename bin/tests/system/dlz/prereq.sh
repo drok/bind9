@@ -18,7 +18,7 @@
 
 TOP=${SYSTEMTESTTOP:=.}/../../../..
 
-if [ "" != "filesystem" ]; then
+if [ "filesystem" != "filesystem" ]; then
         echo "I:DLZ filesystem driver not supported"
         exit 255
 fi

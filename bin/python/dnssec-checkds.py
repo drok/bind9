@@ -1,4 +1,4 @@
-#!
+#!/usr/bin/python
 ############################################################################
 # Copyright (C) 2012, 2013  Internet Systems Consortium, Inc. ("ISC")
 #
@@ -270,10 +270,10 @@ def parse_args():
     parser.add_argument('-l', '--lookaside', dest='lookaside', type=str,
                         help='DLV lookaside zone')
     parser.add_argument('-d', '--dig', dest='dig',
-                        default=os.path.join('/usr/local', bindir, 'dig'),
+                        default=os.path.join('/usr', bindir, 'dig'),
                         type=str, help='path to \'dig\'')
     parser.add_argument('-D', '--dsfromkey', dest='dsfromkey',
-                        default=os.path.join('/usr/local', sbindir,
+                        default=os.path.join('/usr', sbindir,
                                              'dnssec-dsfromkey'),
                         type=str, help='path to \'dig\'')
     parser.add_argument('-v', '--version', action='version', version='9.9.1')

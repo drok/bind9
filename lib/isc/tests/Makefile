@@ -51,7 +51,7 @@ ISC_INCLUDES = -I/home/radu/proj/bind9/lib/isc/include \
 	-I${top_srcdir}/lib/isc \
 	-I${top_srcdir}/lib/isc/include \
 	-I${top_srcdir}/lib/isc/unix/include \
-	-I${top_srcdir}/lib/isc/nothreads/include \
+	-I${top_srcdir}/lib/isc/pthreads/include \
 	-I${top_srcdir}/lib/isc/x86_32/include
 
 ISCCC_INCLUDES = -I/home/radu/proj/bind9/lib/isccc/include \
@@ -76,12 +76,12 @@ TEST_INCLUDES = \
 CINCLUDES =	-I. -Iinclude ${ISC_INCLUDES}
 CDEFINES =	-DTESTS="\"${top_builddir}/lib/isc/tests/\""
 
-ISCLIBS =	../libisc.a
-ISCDEPLIBS =	../libisc.a
+ISCLIBS =	../libisc.la
+ISCDEPLIBS =	../libisc.la
 
-LIBS =		-ldl -lcap  -lxml2 -lz -lm 
+LIBS =		-ldl -lcap -lpthread  -lxml2 -lz -lm -L/home/radu/proj/bind9/unit/atf/lib -latf-c
 
-OBJS =		isctest.o
+OBJS =		isctest.lo
 SRCS =		isctest.c taskpool_test.c socket_test.c hash_test.c \
 		lex_test.c \
 		sockaddr_test.c symtab_test.c task_test.c queue_test.c \
@@ -123,18 +123,18 @@ TARGETS =	taskpool_test socket_test hash_test \
 ### Note: paths that vary by Makefile MUST NOT be listed
 ### here, or they won't get expanded correctly.
 
-prefix =	/usr/local
-exec_prefix =	${prefix}
-bindir =	${exec_prefix}/bin
-sbindir =	${exec_prefix}/sbin
-includedir =	${prefix}/include
-libdir =	${exec_prefix}/lib
+prefix =	/usr
+exec_prefix =	/usr
+bindir =	/usr/bin
+sbindir =	/usr/sbin
+includedir =	/usr/include/bind9
+libdir =	/usr/lib
 sysconfdir =	/etc
 localstatedir =	/var
-mandir =	${datarootdir}/man
+mandir =	/usr/share/man
 datarootdir =   ${prefix}/share
-export_libdir =	${exec_prefix}/lib/bind9/
-export_includedir = ${prefix}/include/bind9/
+export_libdir =	/usr/lib
+export_includedir = /usr/include
 
 DESTDIR =
 
@@ -210,21 +210,21 @@ install clean distclean maintainer-clean doc docclean man manclean::
 CC = 		/usr/bin/gcc
 CFLAGS =	-g3 -gdwarf-2 -I/usr/include/libxml2
 LDFLAGS =	
-STD_CINCLUDES =	
-STD_CDEFINES =	 -D_GNU_SOURCE
+STD_CINCLUDES =	 -I/home/radu/proj/bind9/unit/atf/include
+STD_CDEFINES =	 -DISC_LIST_CHECKINIT=1 -D_GNU_SOURCE
 STD_CWARNINGS =	 -W -Wall -Wmissing-prototypes -Wcast-qual -Wwrite-strings -Wformat -Wpointer-arith -fno-strict-aliasing -fno-delete-null-pointer-checks
 
 BUILD_CC = /usr/bin/gcc
 BUILD_CFLAGS = -g3 -gdwarf-2 -I/usr/include/libxml2
 BUILD_CPPFLAGS =  -D_GNU_SOURCE 
 BUILD_LDFLAGS = 
-BUILD_LIBS = -ldl -lcap  -lxml2 -lz -lm
+BUILD_LIBS = -ldl -lcap -lpthread  -lxml2 -lz -lm
 
 .SUFFIXES:
-.SUFFIXES: .c .o
+.SUFFIXES: .c .lo
 
 ALWAYS_INCLUDES = -I${top_builddir}
-ALWAYS_DEFINES = 
+ALWAYS_DEFINES = -D_REENTRANT
 ALWAYS_WARNINGS =
 
 ALL_CPPFLAGS = \
@@ -234,14 +234,14 @@ ALL_CPPFLAGS = \
 ALL_CFLAGS = ${EXT_CFLAGS} ${ALL_CPPFLAGS} ${CFLAGS} \
 	${ALWAYS_WARNINGS} ${STD_CWARNINGS} ${CWARNINGS}
 
-.c.o:
+%.lo:  ${srcdir}/%.c
 	${LIBTOOL_MODE_COMPILE} ${CC} ${ALL_CFLAGS} -c $<
 
 SHELL = /bin/sh
-LIBTOOL = 
-LIBTOOL_MODE_COMPILE = ${LIBTOOL} 
-LIBTOOL_MODE_INSTALL = ${LIBTOOL} 
-LIBTOOL_MODE_LINK = ${LIBTOOL} 
+LIBTOOL = $(SHELL) $(top_builddir)/libtool
+LIBTOOL_MODE_COMPILE = ${LIBTOOL} --mode=compile --tag=CC
+LIBTOOL_MODE_INSTALL = ${LIBTOOL} --mode=install --tag=CC
+LIBTOOL_MODE_LINK = ${LIBTOOL} --mode=link --tag=CC
 PURIFY = 
 
 MKDEP = ${SHELL} ${top_builddir}/make/mkdep
@@ -297,19 +297,19 @@ FINALBUILDCMD = if [ X"${MKSYMTBL_PROGRAM}" = X -o X"$${MAKE_SYMTABLE:-${ALWAYS_
 		rm -f $@tmp0; \
 		${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${ALL_CFLAGS} ${LDFLAGS} \
 		-o $@tmp0 $${BASEOBJS} $${LIBS0} ${LIBS} || exit 1; \
-		rm -f $@-symtbl.c $@-symtbl.o; \
+		rm -f $@-symtbl.c $@-symtbl.lo; \
 		${MKSYMTBL_PROGRAM} ${top_srcdir}/util/mksymtbl.pl \
 		-o $@-symtbl.c $@tmp0 || exit 1; \
-		$(MAKE) $@-symtbl.o || exit 1; \
+		$(MAKE) $@-symtbl.lo || exit 1; \
 		rm -f $@tmp1; \
 		${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${ALL_CFLAGS} ${LDFLAGS} \
-		-o $@tmp1 $${BASEOBJS} $@-symtbl.o $${LIBS0} ${NOSYMLIBS} || exit 1; \
-		rm -f $@-symtbl.c $@-symtbl.o; \
+		-o $@tmp1 $${BASEOBJS} $@-symtbl.lo $${LIBS0} ${NOSYMLIBS} || exit 1; \
+		rm -f $@-symtbl.c $@-symtbl.lo; \
 		${MKSYMTBL_PROGRAM} ${top_srcdir}/util/mksymtbl.pl \
 		-o $@-symtbl.c $@tmp1 || exit 1; \
-		$(MAKE) $@-symtbl.o || exit 1; \
+		$(MAKE) $@-symtbl.lo || exit 1; \
 		${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${ALL_CFLAGS} ${LDFLAGS} \
-		-o $@tmp2 $${BASEOBJS} $@-symtbl.o $${LIBS0} ${NOSYMLIBS}; \
+		-o $@tmp2 $${BASEOBJS} $@-symtbl.lo $${LIBS0} ${NOSYMLIBS}; \
 		${MKSYMTBL_PROGRAM} ${top_srcdir}/util/mksymtbl.pl \
 		-o $@-symtbl2.c $@tmp2; \
 		count=0; \
@@ -317,12 +317,12 @@ FINALBUILDCMD = if [ X"${MKSYMTBL_PROGRAM}" = X -o X"$${MAKE_SYMTABLE:-${ALWAYS_
 		do \
 			count=`expr $$count + 1` ; \
 			test $$count = 42 && exit 1 ; \
-			rm -f $@-symtbl.c $@-symtbl.o; \
+			rm -f $@-symtbl.c $@-symtbl.lo; \
 			${MKSYMTBL_PROGRAM} ${top_srcdir}/util/mksymtbl.pl \
 			-o $@-symtbl.c $@tmp2 || exit 1; \
-			$(MAKE) $@-symtbl.o || exit 1; \
+			$(MAKE) $@-symtbl.lo || exit 1; \
 			${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${ALL_CFLAGS} \
-			${LDFLAGS} -o $@tmp2 $${BASEOBJS} $@-symtbl.o \
+			${LDFLAGS} -o $@tmp2 $${BASEOBJS} $@-symtbl.lo \
 			$${LIBS0} ${NOSYMLIBS}; \
 			${MKSYMTBL_PROGRAM} ${top_srcdir}/util/mksymtbl.pl \
 			-o $@-symtbl2.c $@tmp2; \
@@ -335,7 +335,7 @@ cleandir: distclean
 superclean: maintainer-clean
 
 clean distclean maintainer-clean::
-	rm -f *.o *.o *.lo *.la core *.core *-symtbl.c *tmp0 *tmp1 *tmp2
+	rm -f *.lo *.o *.lo *.la core *.core *-symtbl.c *tmp0 *tmp1 *tmp2
 	rm -rf .depend .libs
 
 distclean maintainer-clean::
@@ -416,7 +416,7 @@ W3M =			w3m
 ###
 ### Script language program used to create internal symbol tables
 ###
-MKSYMTBL_PROGRAM =	/usr/bin/perl
+MKSYMTBL_PROGRAM =	
 
 ###
 ### Switch to create internal symbol table selectively
@@ -466,57 +466,57 @@ ALWAYS_MAKE_SYMTABLE =
 	chmod +x $@
 
 
-taskpool_test: taskpool_test.o isctest.o ${ISCDEPLIBS}
+taskpool_test: taskpool_test.lo isctest.lo ${ISCDEPLIBS}
 	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ \
-			taskpool_test.o isctest.o ${ISCLIBS} ${LIBS}
+			taskpool_test.lo isctest.lo ${ISCLIBS} ${LIBS}
 
-task_test: task_test.o isctest.o ${ISCDEPLIBS}
+task_test: task_test.lo isctest.lo ${ISCDEPLIBS}
 	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ \
-			task_test.o isctest.o ${ISCLIBS} ${LIBS}
+			task_test.lo isctest.lo ${ISCLIBS} ${LIBS}
 
-socket_test: socket_test.o isctest.o ${ISCDEPLIBS}
+socket_test: socket_test.lo isctest.lo ${ISCDEPLIBS}
 	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ \
-			socket_test.o isctest.o ${ISCLIBS} ${LIBS}
+			socket_test.lo isctest.lo ${ISCLIBS} ${LIBS}
 
-hash_test: hash_test.o ${ISCDEPLIBS}
+hash_test: hash_test.lo ${ISCDEPLIBS}
 	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ \
-			hash_test.o ${ISCLIBS} ${LIBS}
+			hash_test.lo ${ISCLIBS} ${LIBS}
 
-lex_test: lex_test.o ${ISCDEPLIBS}
+lex_test: lex_test.lo ${ISCDEPLIBS}
 	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ \
-			lex_test.o ${ISCLIBS} ${LIBS}
+			lex_test.lo ${ISCLIBS} ${LIBS}
 
-queue_test: queue_test.o isctest.o ${ISCDEPLIBS}
+queue_test: queue_test.lo isctest.lo ${ISCDEPLIBS}
 	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ \
-			queue_test.o isctest.o ${ISCLIBS} ${LIBS}
+			queue_test.lo isctest.lo ${ISCLIBS} ${LIBS}
 
-symtab_test: symtab_test.o isctest.o ${ISCDEPLIBS}
+symtab_test: symtab_test.lo isctest.lo ${ISCDEPLIBS}
 	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ \
-			symtab_test.o isctest.o ${ISCLIBS} ${LIBS}
+			symtab_test.lo isctest.lo ${ISCLIBS} ${LIBS}
 
-parse_test: parse_test.o isctest.o ${ISCDEPLIBS}
+parse_test: parse_test.lo isctest.lo ${ISCDEPLIBS}
 	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ \
-			parse_test.o isctest.o ${ISCLIBS} ${LIBS}
+			parse_test.lo isctest.lo ${ISCLIBS} ${LIBS}
 
-sockaddr_test: sockaddr_test.o isctest.o ${ISCDEPLIBS}
+sockaddr_test: sockaddr_test.lo isctest.lo ${ISCDEPLIBS}
 	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ \
-			sockaddr_test.o isctest.o ${ISCLIBS} ${LIBS}
+			sockaddr_test.lo isctest.lo ${ISCLIBS} ${LIBS}
 
-pool_test: pool_test.o isctest.o ${ISCDEPLIBS}
+pool_test: pool_test.lo isctest.lo ${ISCDEPLIBS}
 	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ \
-			pool_test.o isctest.o ${ISCLIBS} ${LIBS}
+			pool_test.lo isctest.lo ${ISCLIBS} ${LIBS}
 
-regex_test: regex_test.o ${ISCDEPLIBS}
+regex_test: regex_test.lo ${ISCDEPLIBS}
 	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ \
-			regex_test.o ${ISCLIBS} ${LIBS}
+			regex_test.lo ${ISCLIBS} ${LIBS}
 
-safe_test: safe_test.o ${ISCDEPLIBS}
+safe_test: safe_test.lo ${ISCDEPLIBS}
 	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ \
-			safe_test.o ${ISCLIBS} ${LIBS}
+			safe_test.lo ${ISCLIBS} ${LIBS}
 
-time_test: time_test.o ${ISCDEPLIBS}
+time_test: time_test.lo ${ISCDEPLIBS}
 	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ \
-			time_test.o ${ISCLIBS} ${LIBS}
+			time_test.lo ${ISCLIBS} ${LIBS}
 
 unit::
 	sh ${top_srcdir}/unit/unittest.sh

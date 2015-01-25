@@ -185,8 +185,20 @@ struct rr {
 };
 
 typedef struct update_event update_event_t;
+#include "dst_internal.h"
 
 /**************************************************************************/
+static void
+listkeys(const char *msg, unsigned int line, dst_key_t *keys[], unsigned int nkeys)
+{
+	unsigned int i;
+	isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING,
+			"-------- %s:%u UPDATE LIST %u KEYS %p -------", msg, line, nkeys, keys);
+	if (keys) for (i = 0; i < nkeys; i++) {
+		if (VALID_KEY(keys[i])) isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING,
+			"-key------- #%u = key #%u", i, dst_key_id(keys[i]) );
+	}
+}
 
 static void
 update_log(dns_update_log_t *callback, dns_zone_t *zone,
@@ -1051,7 +1063,7 @@ find_zone_keys(dns_zone_t *zone, dns_db_t *db, dns_dbversion_t *ver,
 	dns_dbnode_t *node = NULL;
 	const char *directory = dns_zone_getkeydirectory(zone);
 	CHECK(dns_db_findnode(db, dns_db_origin(db), ISC_FALSE, &node));
-isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: calling  dns_dnssec_findzonekeys2 with directory=%s", __FILE__, __LINE__, __FUNCTION__, directory);
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s:zone=%p calling  dns_dnssec_findzonekeys2 with directory=%s", __FILE__, __LINE__, __FUNCTION__, zone, directory);
 	CHECK(dns_dnssec_findzonekeys2(db, ver, node, dns_db_origin(db),
 				       directory, mctx, maxkeys, keys, nkeys));
  failure:
@@ -1101,6 +1113,7 @@ add_sigs(dns_update_log_t *log, dns_zone_t *zone, dns_db_t *db,
 	 * have both KSK and non-KSK keys that are not revoked per
 	 * algorithm.
 	 */
+listkeys(__FILE__, __LINE__, keys, nkeys);
 	for (i = 0; i < nkeys; i++) {
 		isc_boolean_t both = ISC_FALSE;
 
@@ -1110,7 +1123,11 @@ add_sigs(dns_update_log_t *log, dns_zone_t *zone, dns_db_t *db,
 			continue;
 		}
 
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "-sss------- %s:%u:%s zone=%p revoke=%u type=%u", __FILE__, __LINE__, __FUNCTION__, zone, REVOKE(keys[i]), type
+	);
 		if (check_ksk && !REVOKE(keys[i])) {
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "-sss------- %s:%u:%s zone=%p", __FILE__, __LINE__, __FUNCTION__, zone
+	);
 			isc_boolean_t have_ksk, have_nonksk;
 			if (KSK(keys[i])) {
 				have_ksk = ISC_TRUE;
@@ -1136,8 +1153,9 @@ add_sigs(dns_update_log_t *log, dns_zone_t *zone, dns_db_t *db,
 
 		if (both) {
 			if (type == dns_rdatatype_dnskey) {
-				if (!KSK(keys[i]) && keyset_kskonly)
+				if (!KSK(keys[i]) && keyset_kskonly) {
 					continue;
+				}
 			} else if (KSK(keys[i]))
 				continue;
 		} else if (REVOKE(keys[i]) && type != dns_rdatatype_dnskey)
@@ -1154,13 +1172,16 @@ add_sigs(dns_update_log_t *log, dns_zone_t *zone, dns_db_t *db,
 				    rdataset.ttl, &sig_rdata));
 		dns_rdata_reset(&sig_rdata);
 		isc_buffer_init(&buffer, data, sizeof(data));
-		added_sig = ISC_TRUE;
 	}
 	if (!added_sig) {
 		update_log(log, zone, ISC_LOG_ERROR,
 			   "found no active private keys, "
 			   "unable to generate any signatures");
 		result = ISC_R_NOTFOUND;
+	} else {
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "-sss------- %s:%u:%s zone=%p ADDED sig", __FILE__, __LINE__, __FUNCTION__, zone
+	);
+
 	}
 
  failure:
@@ -1187,6 +1208,8 @@ del_keysigs(dns_db_t *db, dns_dbversion_t *ver, dns_name_t *name,
 	dns_rdata_rrsig_t rrsig;
 	isc_boolean_t found;
 
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "-sss------- %s:%u:%s", __FILE__, __LINE__, __FUNCTION__
+	);
 	dns_rdataset_init(&rdataset);
 
 	result = dns_db_findnode(db, name, ISC_FALSE, &node);
@@ -1217,6 +1240,8 @@ del_keysigs(dns_db_t *db, dns_dbversion_t *ver, dns_name_t *name,
 				if (!dst_key_isprivate(keys[i]) &&
 				    !dst_key_inactive(keys[i]))
 				{
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "-sss------- %s:%u:%s: skip rrsig of key#%u", __FILE__, __LINE__, __FUNCTION__,
+	dst_key_id(keys[i]));
 					/*
 					 * The re-signing code in zone.c
 					 * will mark this as offline.
@@ -1224,6 +1249,8 @@ del_keysigs(dns_db_t *db, dns_dbversion_t *ver, dns_name_t *name,
 					 */
 					break;
 				}
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: DNS_DIFFOP_DEL RRSIG of key#%u %s", __FILE__, __LINE__, __FUNCTION__,
+		dst_key_id(keys[i]), dst_key_isprivate(keys[i]) ? "private" : "public");
 				result = update_one_rr(db, ver, diff,
 						       DNS_DIFFOP_DEL, name,
 						       rdataset.ttl, &rdata);
@@ -1260,6 +1287,7 @@ add_exposed_sigs(dns_update_log_t *log, dns_zone_t *zone, dns_db_t *db,
 	dns_dbnode_t *node;
 	dns_rdatasetiter_t *iter;
 
+listkeys(__FILE__, __LINE__, keys, nkeys);
 	node = NULL;
 	result = dns_db_findnode(db, name, ISC_FALSE, &node);
 	if (result == ISC_R_NOTFOUND)
@@ -1355,6 +1383,7 @@ dns_update_signatures(dns_update_log_t *log, dns_zone_t *zone, dns_db_t *db,
 	isc_boolean_t cut;
 	dns_rdatatype_t privatetype = dns_zone_getprivatetype(zone);
 
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s:zone=%p", __FILE__, __LINE__, __FUNCTION__, zone);
 	dns_diff_init(diff->mctx, &diffnames);
 	dns_diff_init(diff->mctx, &affected);
 
@@ -1364,6 +1393,7 @@ dns_update_signatures(dns_update_log_t *log, dns_zone_t *zone, dns_db_t *db,
 
 	result = find_zone_keys(zone, db, newver, diff->mctx,
 				DNS_MAXZONEKEYS, zone_keys, &nkeys);
+listkeys(__FILE__, __LINE__, zone_keys, nkeys);
 	if (result != ISC_R_SUCCESS) {
 		update_log(log, zone, ISC_LOG_ERROR,
 			   "could not get zone keys for secure dynamic update");
@@ -1373,7 +1403,6 @@ dns_update_signatures(dns_update_log_t *log, dns_zone_t *zone, dns_db_t *db,
 	isc_stdtime_get(&now);
 	inception = now - 3600; /* Allow for some clock skew. */
 	expire = now + sigvalidityinterval;
-
 	/*
 	 * Do we look at the KSK flag on the DNSKEY to determining which
 	 * keys sign which RRsets?  First check the zone option then

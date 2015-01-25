@@ -33,7 +33,7 @@
 /* #undef NEED_PTHREAD_INIT */
 
 /** define if your system has sigwait() */
-/* #undef HAVE_SIGWAIT */
+#define HAVE_SIGWAIT 1
 
 /** define if sigwait() is the UnixWare flavor */
 /* #undef HAVE_UNIXWARE_SIGWAIT */
@@ -42,10 +42,10 @@
 /* #undef _POSIX_PTHREAD_SEMANTICS */
 
 /** define if LinuxThreads is in use */
-/* #undef HAVE_LINUXTHREADS */
+#define HAVE_LINUXTHREADS 1
 
 /** define if sysconf() is available */
-/* #undef HAVE_SYSCONF */
+#define HAVE_SYSCONF 1
 
 /** define if sysctlbyname() is available */
 /* #undef HAVE_SYSCTLBYNAME */
@@ -125,10 +125,10 @@ int sigwait(const unsigned int *set, int *sig);
 #define PATH_RANDOMDEV "/dev/random"
 
 /** define if pthread_attr_getstacksize() is available */
-/* #undef HAVE_PTHREAD_ATTR_GETSTACKSIZE */
+#define HAVE_PTHREAD_ATTR_GETSTACKSIZE 1
 
 /** define if pthread_attr_setstacksize() is available */
-/* #undef HAVE_PTHREAD_ATTR_SETSTACKSIZE */
+#define HAVE_PTHREAD_ATTR_SETSTACKSIZE 1
 
 /** define if you have strerror in the C library. */
 #define HAVE_STRERROR 1
@@ -152,10 +152,10 @@ int sigwait(const unsigned int *set, int *sig);
 /* #undef AC_APPLE_UNIVERSAL_BUILD */
 
 /* Define to enable the "filter-aaaa-on-v4" option. */
-/* #undef ALLOW_FILTER_AAAA_ON_V4 */
+#define ALLOW_FILTER_AAAA_ON_V4 1
 
 /* define if ATF unit tests are to be built. */
-/* #undef ATF_TEST */
+#define ATF_TEST 1
 
 /* Define if recvmsg() does not meet all of the BSD socket API specifications.
    */
@@ -165,7 +165,7 @@ int sigwait(const unsigned int *set, int *sig);
 /* #undef BROKEN_TCP_BIND_BEFORE_CONNECT */
 
 /* Define to enable "rrset-order fixed" syntax. */
-/* #undef DNS_RDATASET_FIXED */
+#define DNS_RDATASET_FIXED 1
 
 /* Define to enable rpz-nsdname rules. */
 #define ENABLE_RPZ_NSDNAME 1
@@ -246,7 +246,7 @@ int sigwait(const unsigned int *set, int *sig);
 #define HAVE_LIBCAP 1
 
 /* if system have backtrace function */
-#define HAVE_LIBCTRACE /**/
+/* #undef HAVE_LIBCTRACE */
 
 /* Define to 1 if you have the `c_r' library (-lc_r). */
 /* #undef HAVE_LIBC_R */
@@ -255,7 +255,7 @@ int sigwait(const unsigned int *set, int *sig);
 /* #undef HAVE_LIBNSL */
 
 /* Define to 1 if you have the `pthread' library (-lpthread). */
-/* #undef HAVE_LIBPTHREAD */
+#define HAVE_LIBPTHREAD 1
 
 /* Define to 1 if you have the `rt' library (-lrt). */
 /* #undef HAVE_LIBRT */
@@ -297,7 +297,7 @@ int sigwait(const unsigned int *set, int *sig);
 /* #undef HAVE_OPENSSL_GOST */
 
 /* Define to 1 if you have the `pthread_yield' function. */
-/* #undef HAVE_PTHREAD_YIELD */
+#define HAVE_PTHREAD_YIELD 1
 
 /* Define to 1 if you have the `pthread_yield_np' function. */
 /* #undef HAVE_PTHREAD_YIELD_NP */
@@ -309,10 +309,10 @@ int sigwait(const unsigned int *set, int *sig);
 #define HAVE_REGEX_H 1
 
 /* Define to 1 if you have the <sched.h> header file. */
-/* #undef HAVE_SCHED_H */
+#define HAVE_SCHED_H 1
 
 /* Define to 1 if you have the `sched_yield' function. */
-/* #undef HAVE_SCHED_YIELD */
+#define HAVE_SCHED_YIELD 1
 
 /* Define to 1 if you have the `setegid' function. */
 #define HAVE_SETEGID 1
@@ -386,6 +386,9 @@ int sigwait(const unsigned int *set, int *sig);
 /* Define to 1 if you have the `usleep' function. */
 #define HAVE_USLEEP 1
 
+/* Whether valgrind extensions should be used for debugging */
+#define HAVE_VALGRIND 1
+
 /* return type of gai_strerror */
 #define IRS_GAISTRERROR_RETURN_T const char *
 
@@ -448,7 +451,7 @@ int sigwait(const unsigned int *set, int *sig);
 /* #undef USE_FIONBIO_IOCTL */
 
 /* Enable DNS Response Rate Limiting */
-/* #undef USE_RRL */
+#define USE_RRL 1
 
 /* define if idnkit support is to be included. */
 /* #undef WITH_IDN */

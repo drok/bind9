@@ -20,10 +20,10 @@ dir=/tmp/zone-edit.$$
 mkdir ${dir} || exit 1
 trap "/bin/rm -rf ${dir}" 0
 
-prefix=/usr/local
-exec_prefix=${prefix}
-bindir=${exec_prefix}/bin
-sbindir=${exec_prefix}/sbin
+prefix=/usr
+exec_prefix=/usr
+bindir=/usr/bin
+sbindir=/usr/sbin
 
 dig=${bindir}/dig
 checkzone=${sbindir}/named-checkzone

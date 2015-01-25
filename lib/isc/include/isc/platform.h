@@ -149,7 +149,7 @@
 /*! \brief
  * Define if we want to log backtrace
  */
-#define ISC_PLATFORM_USEBACKTRACE 1
+#undef ISC_PLATFORM_USEBACKTRACE
 
 /*
  *** Printing.
@@ -211,7 +211,7 @@
 /*
  * Defined if we are using threads.
  */
-#undef ISC_PLATFORM_USETHREADS
+#define ISC_PLATFORM_USETHREADS 1
 
 /*
  * Defined if unistd.h does not cause fd_set to be delared.

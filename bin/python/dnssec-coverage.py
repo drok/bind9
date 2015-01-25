@@ -1,4 +1,4 @@
-#!
+#!/usr/bin/python
 ############################################################################
 # Copyright (C) 2013  Internet Systems Consortium, Inc. ("ISC")
 #
@@ -623,7 +623,7 @@ def parse_args():
     bindir = 'bin';
 
     compilezone = set_path('named-compilezone',
-                           os.path.join('/usr/local', bindir,
+                           os.path.join('/usr', bindir,
                                         'named-compilezone'))
 
     parser = argparse.ArgumentParser(description=prog + ': checks future ' +

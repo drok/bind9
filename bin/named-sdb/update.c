@@ -3076,6 +3076,7 @@ update_action(isc_task_t *task, isc_event_t *event) {
 			interval = dns_zone_getsigvalidityinterval(zone);
 			log.func = update_log_cb;
 			log.arg = client;
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s:zone=%p", __FILE__, __LINE__, __FUNCTION__, zone);
 			result = dns_update_signatures(&log, zone, db, oldver,
 						       ver, &diff, interval);
 

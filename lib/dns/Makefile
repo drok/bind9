@@ -27,9 +27,10 @@ VERSION=9.9.5-P1
 # 9.8: 80-89, 120-129
 # 9.9: 90-109
 # 9.9-sub: 130-139
-LIBINTERFACE = 102
-LIBREVISION = 2
-LIBAGE = 2
+# 9.9.local = 1000+
+LIBINTERFACE = 1000
+LIBREVISION = 0 
+LIBAGE = 3
 
 # Copyright (C) 2004, 2005, 2007, 2012  Internet Systems Consortium, Inc. ("ISC")
 # Copyright (C) 1999-2001  Internet Software Consortium.
@@ -58,7 +59,7 @@ ISC_INCLUDES = -I/home/radu/proj/bind9/lib/isc/include \
 	-I${top_srcdir}/lib/isc \
 	-I${top_srcdir}/lib/isc/include \
 	-I${top_srcdir}/lib/isc/unix/include \
-	-I${top_srcdir}/lib/isc/nothreads/include \
+	-I${top_srcdir}/lib/isc/pthreads/include \
 	-I${top_srcdir}/lib/isc/x86_32/include
 
 ISCCC_INCLUDES = -I/home/radu/proj/bind9/lib/isccc/include \
@@ -80,7 +81,7 @@ BIND9_INCLUDES = -I/home/radu/proj/bind9/lib/bind9/include \
 TEST_INCLUDES = \
 	-I${top_srcdir}/lib/tests/include
 
-USE_ISC_SPNEGO = -DUSE_ISC_SPNEGO
+USE_ISC_SPNEGO = 
 
 CINCLUDES =	-I. -Iinclude ${DNS_INCLUDES} \
 		${ISC_INCLUDES}  -I/usr/include
@@ -89,52 +90,52 @@ CDEFINES =	-DUSE_MD5 -DOPENSSL -DGSSAPI ${USE_ISC_SPNEGO}
 
 CWARNINGS =
 
-ISCLIBS =	../../lib/isc/libisc.a
+ISCLIBS =	../../lib/isc/libisc.la
 
-ISCDEPLIBS =	../../lib/isc/libisc.a
+ISCDEPLIBS =	../../lib/isc/libisc.la
 
-LIBS =		-ldl -lcap  -lxml2 -lz -lm
-
-# Alphabetically
-
-OPENSSLGOSTLINKOBJS = opensslgost_link.o
-OPENSSLLINKOBJS = openssl_link.o openssldh_link.o openssldsa_link.o \
-		  opensslecdsa_link.o  \
-		  opensslrsa_link.o
-
-DSTOBJS =	 spnego.o ${OPENSSLLINKOBJS} \
-		dst_api.o dst_lib.o dst_parse.o dst_result.o \
-		gssapi_link.o gssapictx.o hmac_link.o key.o 
-
-RRLOBJS =	rrl.o
+LIBS =		-ldl -lcap -lpthread  -lxml2 -lz -lm
 
 # Alphabetically
-DNSOBJS =	acache.o acl.o adb.o byaddr.o \
-		cache.o callbacks.o clientinfo.o compress.o \
-		db.o dbiterator.o dbtable.o diff.o dispatch.o \
-		dlz.o dns64.o dnssec.o ds.o forward.o iptable.o \
-		dynamic_db.o journal.o keydata.o keytable.o \
-		lib.o log.o lookup.o \
-		master.o masterdump.o message.o \
-		name.o ncache.o nsec.o nsec3.o order.o peer.o \
-		portlist.o private.o \
-		rbt.o rbtdb.o rbtdb64.o rcode.o rdata.o \
-		rdatalist.o rdataset.o rdatasetiter.o rdataslab.o \
-		request.o resolver.o result.o rootns.o \
-		rpz.o rriterator.o sdb.o \
-		sdlz.o soa.o ssu.o ssu_external.o \
-		stats.o tcpmsg.o time.o timer.o tkey.o \
-		tsec.o tsig.o ttl.o update.o validator.o \
-		version.o view.o xfrin.o zone.o zonekey.o zt.o
 
-OBJS=		${DNSOBJS} ${OTHEROBJS} ${DSTOBJS} 
+OPENSSLGOSTLINKOBJS = opensslgost_link.lo
+OPENSSLLINKOBJS = openssl_link.lo openssldh_link.lo openssldsa_link.lo \
+		  opensslecdsa_link.lo  \
+		  opensslrsa_link.lo
+
+DSTOBJS =	 ${OPENSSLLINKOBJS} \
+		dst_api.lo dst_lib.lo dst_parse.lo dst_result.lo \
+		gssapi_link.lo gssapictx.lo hmac_link.lo key.lo 
+
+RRLOBJS =	rrl.lo
+
+# Alphabetically
+DNSOBJS =	acache.lo acl.lo adb.lo byaddr.lo \
+		cache.lo callbacks.lo clientinfo.lo compress.lo \
+		db.lo dbiterator.lo dbtable.lo diff.lo dispatch.lo \
+		dlz.lo dns64.lo dnssec.lo ds.lo forward.lo iptable.lo \
+		dynamic_db.lo journal.lo keydata.lo keytable.lo \
+		lib.lo log.lo lookup.lo \
+		master.lo masterdump.lo message.lo \
+		name.lo ncache.lo nsec.lo nsec3.lo order.lo peer.lo \
+		portlist.lo private.lo \
+		rbt.lo rbtdb.lo rbtdb64.lo rcode.lo rdata.lo \
+		rdatalist.lo rdataset.lo rdatasetiter.lo rdataslab.lo \
+		request.lo resolver.lo result.lo rootns.lo \
+		rpz.lo rriterator.lo sdb.lo \
+		sdlz.lo soa.lo ssu.lo ssu_external.lo \
+		stats.lo tcpmsg.lo time.lo timer.lo tkey.lo \
+		tsec.lo tsig.lo ttl.lo update.lo validator.lo \
+		version.lo view.lo xfrin.lo zone.lo zonekey.lo zt.lo
+
+OBJS=		${DNSOBJS} ${OTHEROBJS} ${DSTOBJS} ${RRLOBJS}
 
 # Alphabetically
 OPENSSLGOSTLINKSRCS = opensslgost_link.c
 OPENSSLLINKSRCS = openssl_link.c openssldh_link.c openssldsa_link.c \
 		  opensslecdsa_link.c  opensslrsa_link.c
 
-DSTSRCS =	 spnego.c ${OPENSSLLINKSRCS} \
+DSTSRCS =	 ${OPENSSLLINKSRCS} \
 		dst_api.c dst_lib.c dst_parse.c \
 		dst_result.c gssapi_link.c gssapictx.c \
 		hmac_link.c key.c
@@ -156,12 +157,12 @@ DNSSRCS =	acache.c acl.c adb.c byaddr.c \
 
 RRLSRCS =	rrl.c
 
-SRCS = ${DSTSRCS} ${DNSSRCS} 
+SRCS = ${DSTSRCS} ${DNSSRCS} ${RRLSRCS}
 
 SUBDIRS =	include
 TARGETS =	include/dns/enumtype.h include/dns/enumclass.h \
 		include/dns/rdatastruct.h timestamp
-TESTDIRS =	
+TESTDIRS =	tests
 
 DEPENDEXTRA =	./gen -F include/dns/rdatastruct.h \
 		-s ${srcdir} -d >> Makefile ;
@@ -193,18 +194,18 @@ DEPENDEXTRA =	./gen -F include/dns/rdatastruct.h \
 ### Note: paths that vary by Makefile MUST NOT be listed
 ### here, or they won't get expanded correctly.
 
-prefix =	/usr/local
-exec_prefix =	${prefix}
-bindir =	${exec_prefix}/bin
-sbindir =	${exec_prefix}/sbin
-includedir =	${prefix}/include
-libdir =	${exec_prefix}/lib
+prefix =	/usr
+exec_prefix =	/usr
+bindir =	/usr/bin
+sbindir =	/usr/sbin
+includedir =	/usr/include/bind9
+libdir =	/usr/lib
 sysconfdir =	/etc
 localstatedir =	/var
-mandir =	${datarootdir}/man
+mandir =	/usr/share/man
 datarootdir =   ${prefix}/share
-export_libdir =	${exec_prefix}/lib/bind9/
-export_includedir = ${prefix}/include/bind9/
+export_libdir =	/usr/lib
+export_includedir = /usr/include
 
 DESTDIR =
 
@@ -280,21 +281,21 @@ install clean distclean maintainer-clean doc docclean man manclean::
 CC = 		/usr/bin/gcc
 CFLAGS =	-g3 -gdwarf-2 -I/usr/include/libxml2
 LDFLAGS =	
-STD_CINCLUDES =	
-STD_CDEFINES =	 -D_GNU_SOURCE
+STD_CINCLUDES =	 -I/home/radu/proj/bind9/unit/atf/include
+STD_CDEFINES =	 -DISC_LIST_CHECKINIT=1 -D_GNU_SOURCE
 STD_CWARNINGS =	 -W -Wall -Wmissing-prototypes -Wcast-qual -Wwrite-strings -Wformat -Wpointer-arith -fno-strict-aliasing -fno-delete-null-pointer-checks
 
 BUILD_CC = /usr/bin/gcc
 BUILD_CFLAGS = -g3 -gdwarf-2 -I/usr/include/libxml2
 BUILD_CPPFLAGS =  -D_GNU_SOURCE 
 BUILD_LDFLAGS = 
-BUILD_LIBS = -ldl -lcap  -lxml2 -lz -lm
+BUILD_LIBS = -ldl -lcap -lpthread  -lxml2 -lz -lm
 
 .SUFFIXES:
-.SUFFIXES: .c .o
+.SUFFIXES: .c .lo
 
 ALWAYS_INCLUDES = -I${top_builddir}
-ALWAYS_DEFINES = 
+ALWAYS_DEFINES = -D_REENTRANT
 ALWAYS_WARNINGS =
 
 ALL_CPPFLAGS = \
@@ -304,14 +305,14 @@ ALL_CPPFLAGS = \
 ALL_CFLAGS = ${EXT_CFLAGS} ${ALL_CPPFLAGS} ${CFLAGS} \
 	${ALWAYS_WARNINGS} ${STD_CWARNINGS} ${CWARNINGS}
 
-.c.o:
+%.lo:  ${srcdir}/%.c
 	${LIBTOOL_MODE_COMPILE} ${CC} ${ALL_CFLAGS} -c $<
 
 SHELL = /bin/sh
-LIBTOOL = 
-LIBTOOL_MODE_COMPILE = ${LIBTOOL} 
-LIBTOOL_MODE_INSTALL = ${LIBTOOL} 
-LIBTOOL_MODE_LINK = ${LIBTOOL} 
+LIBTOOL = $(SHELL) $(top_builddir)/libtool
+LIBTOOL_MODE_COMPILE = ${LIBTOOL} --mode=compile --tag=CC
+LIBTOOL_MODE_INSTALL = ${LIBTOOL} --mode=install --tag=CC
+LIBTOOL_MODE_LINK = ${LIBTOOL} --mode=link --tag=CC
 PURIFY = 
 
 MKDEP = ${SHELL} ${top_builddir}/make/mkdep
@@ -367,19 +368,19 @@ FINALBUILDCMD = if [ X"${MKSYMTBL_PROGRAM}" = X -o X"$${MAKE_SYMTABLE:-${ALWAYS_
 		rm -f $@tmp0; \
 		${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${ALL_CFLAGS} ${LDFLAGS} \
 		-o $@tmp0 $${BASEOBJS} $${LIBS0} ${LIBS} || exit 1; \
-		rm -f $@-symtbl.c $@-symtbl.o; \
+		rm -f $@-symtbl.c $@-symtbl.lo; \
 		${MKSYMTBL_PROGRAM} ${top_srcdir}/util/mksymtbl.pl \
 		-o $@-symtbl.c $@tmp0 || exit 1; \
-		$(MAKE) $@-symtbl.o || exit 1; \
+		$(MAKE) $@-symtbl.lo || exit 1; \
 		rm -f $@tmp1; \
 		${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${ALL_CFLAGS} ${LDFLAGS} \
-		-o $@tmp1 $${BASEOBJS} $@-symtbl.o $${LIBS0} ${NOSYMLIBS} || exit 1; \
-		rm -f $@-symtbl.c $@-symtbl.o; \
+		-o $@tmp1 $${BASEOBJS} $@-symtbl.lo $${LIBS0} ${NOSYMLIBS} || exit 1; \
+		rm -f $@-symtbl.c $@-symtbl.lo; \
 		${MKSYMTBL_PROGRAM} ${top_srcdir}/util/mksymtbl.pl \
 		-o $@-symtbl.c $@tmp1 || exit 1; \
-		$(MAKE) $@-symtbl.o || exit 1; \
+		$(MAKE) $@-symtbl.lo || exit 1; \
 		${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${ALL_CFLAGS} ${LDFLAGS} \
-		-o $@tmp2 $${BASEOBJS} $@-symtbl.o $${LIBS0} ${NOSYMLIBS}; \
+		-o $@tmp2 $${BASEOBJS} $@-symtbl.lo $${LIBS0} ${NOSYMLIBS}; \
 		${MKSYMTBL_PROGRAM} ${top_srcdir}/util/mksymtbl.pl \
 		-o $@-symtbl2.c $@tmp2; \
 		count=0; \
@@ -387,12 +388,12 @@ FINALBUILDCMD = if [ X"${MKSYMTBL_PROGRAM}" = X -o X"$${MAKE_SYMTABLE:-${ALWAYS_
 		do \
 			count=`expr $$count + 1` ; \
 			test $$count = 42 && exit 1 ; \
-			rm -f $@-symtbl.c $@-symtbl.o; \
+			rm -f $@-symtbl.c $@-symtbl.lo; \
 			${MKSYMTBL_PROGRAM} ${top_srcdir}/util/mksymtbl.pl \
 			-o $@-symtbl.c $@tmp2 || exit 1; \
-			$(MAKE) $@-symtbl.o || exit 1; \
+			$(MAKE) $@-symtbl.lo || exit 1; \
 			${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${ALL_CFLAGS} \
-			${LDFLAGS} -o $@tmp2 $${BASEOBJS} $@-symtbl.o \
+			${LDFLAGS} -o $@tmp2 $${BASEOBJS} $@-symtbl.lo \
 			$${LIBS0} ${NOSYMLIBS}; \
 			${MKSYMTBL_PROGRAM} ${top_srcdir}/util/mksymtbl.pl \
 			-o $@-symtbl2.c $@tmp2; \
@@ -405,7 +406,7 @@ cleandir: distclean
 superclean: maintainer-clean
 
 clean distclean maintainer-clean::
-	rm -f *.o *.o *.lo *.la core *.core *-symtbl.c *tmp0 *tmp1 *tmp2
+	rm -f *.lo *.o *.lo *.la core *.core *-symtbl.c *tmp0 *tmp1 *tmp2
 	rm -rf .depend .libs
 
 distclean maintainer-clean::
@@ -486,7 +487,7 @@ W3M =			w3m
 ###
 ### Script language program used to create internal symbol tables
 ###
-MKSYMTBL_PROGRAM =	/usr/bin/perl
+MKSYMTBL_PROGRAM =	
 
 ###
 ### Switch to create internal symbol table selectively
@@ -536,7 +537,7 @@ ALWAYS_MAKE_SYMTABLE =
 	chmod +x $@
 
 
-version.o: version.c
+version.lo: version.c
 	${LIBTOOL_MODE_COMPILE} ${CC} ${ALL_CFLAGS} \
 		-DVERSION=\"${VERSION}\" \
 		-DLIBINTERFACE=${LIBINTERFACE} \
@@ -544,9 +545,9 @@ version.o: version.c
 		-DLIBAGE=${LIBAGE} \
 		-c ${srcdir}/version.c
 
-dynamic_db.o: dynamic_db.c
+dynamic_db.lo: dynamic_db.c
 	${LIBTOOL_MODE_COMPILE} ${CC} ${ALL_CFLAGS} \
-	-DDYNDB_LIBDIR=\"${exec_prefix}/lib/bind/\" \
+	-DDYNDB_LIBDIR=\"/usr/lib/bind/\" \
 	-c ${srcdir}/dynamic_db.c
 
 libdns.a: ${OBJS}
@@ -559,17 +560,17 @@ libdns.la: ${OBJS}
 		-version-info ${LIBINTERFACE}:${LIBREVISION}:${LIBAGE} \
 		${OBJS} ${ISCLIBS}  -lgssapi_krb5 -lcrypto ${LIBS}
 
-timestamp: libdns.a
+timestamp: libdns.la
 	touch timestamp
 
 installdirs:
 	$(SHELL) ${top_srcdir}/mkinstalldirs ${DESTDIR}${libdir}
 
 install:: timestamp installdirs
-	${LIBTOOL_MODE_INSTALL} ${INSTALL_PROGRAM} libdns.a ${DESTDIR}${libdir}
+	${LIBTOOL_MODE_INSTALL} ${INSTALL_PROGRAM} libdns.la ${DESTDIR}${libdir}
 
 clean distclean::
-	rm -f libdns.a timestamp
+	rm -f libdns.la timestamp
 	rm -f gen code.h include/dns/enumtype.h include/dns/enumclass.h
 	rm -f include/dns/rdatastruct.h
 
@@ -580,7 +581,7 @@ newrr::
 include: include/dns/enumtype.h include/dns/enumclass.h \
 	include/dns/rdatastruct.h
 
-rdata.o: code.h
+rdata.lo: code.h
 
 include/dns/enumtype.h: gen
 	./gen -s ${srcdir} -t > $@
@@ -602,7 +603,7 @@ gen: gen.c
 	${BUILD_CC} ${BUILD_CFLAGS} -I${top_srcdir}/lib/isc/include \
 	${BUILD_CPPFLAGS} ${BUILD_LDFLAGS} -o $@ ${srcdir}/gen.c ${BUILD_LIBS}
 
-rbtdb64.o: rbtdb.c
+rbtdb64.lo: rbtdb.c
 
 depend: include/dns/enumtype.h include/dns/enumclass.h \
 	include/dns/rdatastruct.h code.h
@@ -611,4 +612,4 @@ subdirs: include/dns/enumtype.h include/dns/enumclass.h \
 ${OBJS}: include/dns/enumtype.h include/dns/enumclass.h \
 	include/dns/rdatastruct.h
 
-spnego.o: spnego_asn1.c spnego.h
+spnego.lo: spnego_asn1.c spnego.h

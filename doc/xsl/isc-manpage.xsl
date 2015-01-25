@@ -21,7 +21,7 @@
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
 
   <!-- Import the Docbook manpages stuff -->
-  <xsl:import href="manpages/docbook.xsl"/>
+  <xsl:import href="/usr/share/sgml/docbook/xsl-stylesheets/manpages/docbook.xsl"/>
   
   <!-- Include our copyright generator -->
   <xsl:include href="copyright.xsl"/>

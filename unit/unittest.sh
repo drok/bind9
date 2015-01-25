@@ -1,10 +1,10 @@
 #!/bin/sh
 
-PATH=":${PATH}"
+PATH="/home/radu/proj/bind9/unit/atf/bin:${PATH}"
 export PATH
 
 status=0
-if [ -n "" -a -f Atffile ]
+if [ -n "/home/radu/proj/bind9/unit/atf/bin" -a -f Atffile ]
 then
 	echo "I: unit tests"
 	atf-run > atf.out

@@ -138,7 +138,7 @@ else
     sed "
 	s; \\./; ;g
 	s; \\\\; ;g
-	
+	s;\.o;\.lo;
 	$SED" |
     awk '$1 ~ /:$/ {
 		if (rec != "")

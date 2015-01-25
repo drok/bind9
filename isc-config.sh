@@ -17,11 +17,22 @@
 
 # $Id: isc-config.sh.in,v 1.17 2007/06/19 23:46:59 tbox Exp $
 
-prefix=/usr/local
-exec_prefix=${prefix}
+prefix=/usr
+exec_prefix=/usr
 exec_prefix_set=
-includedir=${prefix}/include
-libdir=${exec_prefix}/lib
+includedir=/usr/include/bind9
+arch=$(uname -m)
+
+case $arch in
+	x86_64 | amd64 | sparc64 | s390x | ppc64)
+		libdir=/usr/lib64
+		sec_libdir=/usr/lib
+		;;
+	* )
+		libdir=/usr/lib
+		sec_libdir=/usr/lib64
+		;;
+esac
 
 usage()
 {
@@ -125,7 +136,7 @@ if test x"$echo_cflags" = x"true"; then
 		includes="-I${includedir}"
 	fi
 	if test x"$libisc" = x"true"; then
-		includes="$includes    -D_GNU_SOURCE "
+		includes="$includes -D_REENTRANT  -I/home/radu/proj/bind9/unit/atf/include  -DISC_LIST_CHECKINIT=1 -D_GNU_SOURCE "
 	fi
 	echo $includes
 fi
@@ -133,6 +144,16 @@ if test x"$echo_libs" = x"true"; then
 	if test x"${exec_prefix_set}" = x"true"; then
 		includes="-L${exec_prefix}/lib"
 	else
+		if [ ! -x $libdir/libisc.so ] ; then
+			if [ ! -x $sec_libdir/libisc.so ] ; then
+				echo "Error: ISC libs not found in $libdir"
+				if [ -d $sec_libdir ] ; then
+					echo "Error: ISC libs not found in $sec_libdir"
+				fi
+				exit 1
+			fi
+			libdir=$sec_libdir
+		fi
 		libs="-L${libdir}"
 	fi
 	if test x"$liblwres" = x"true" ; then
@@ -155,7 +176,7 @@ if test x"$echo_libs" = x"true"; then
 		needothers=true
 	fi
 	if test x"$needothers" = x"true" ; then
-		libs="$libs  -ldl -lcap  -lxml2 -lz -lm"
+		libs="$libs  -ldl -lcap -lpthread  -lxml2 -lz -lm"
 	fi
 	echo $libs
 fi

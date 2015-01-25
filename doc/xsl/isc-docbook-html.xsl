@@ -21,7 +21,7 @@
 <xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" version="1.0">
 
   <!-- Import the Docbook HTML stuff -->
-  <xsl:import href="html/docbook.xsl"/>
+  <xsl:import href="/usr/share/sgml/docbook/xsl-stylesheets/html/docbook.xsl"/>
 
   <!-- Readable HTML output, please -->
   <xsl:output indent="yes"/>

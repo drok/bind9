@@ -218,6 +218,7 @@ dns_dnssec_sign(dns_name_t *name, dns_rdataset_t *set, dst_key_t *key,
 	REQUIRE(mctx != NULL);
 	REQUIRE(sigrdata != NULL);
 
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s zone=%p", __FILE__, __LINE__, __FUNCTION__, "unk");
 	if (*inception >= *expire)
 		return (DNS_R_INVALIDTIME);
 

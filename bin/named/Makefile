@@ -27,7 +27,7 @@ DESCRIPTION="(Extended Support Version)"
 
 SRCID=2f73dd49
 
-CONFIGARGS='CC=/usr/bin/gcc' 'CXX=/usr/bin/g++' 'CFLAGS=-g3 -gdwarf-2' 'CXXFLAGS=-g3 -gdwarf-2'
+CONFIGARGS='--build=i686-redhat-linux-gnu' '--host=i686-redhat-linux-gnu' '--target=i686-redhat-linux-gnu' '--program-prefix=' '--prefix=/usr' '--exec-prefix=/usr' '--bindir=/usr/bin' '--sbindir=/usr/sbin' '--sysconfdir=/etc' '--datadir=/usr/share' '--includedir=/usr/include' '--libdir=/usr/lib' '--libexecdir=/usr/libexec' '--sharedstatedir=/var/lib' '--mandir=/usr/share/man' '--infodir=/usr/share/info' '--with-libtool' '--localstatedir=/var' '--enable-threads' '--enable-ipv6' '--enable-filter-aaaa' '--enable-rrl' '--with-pic' '--disable-static' '--disable-openssl-version-check' '--enable-exportlib' '--with-export-libdir=/usr/lib' '--with-export-includedir=/usr/include' '--includedir=/usr/include/bind9' '--with-dlopen=yes' '--with-dlz-ldap=yes' '--with-dlz-postgres=yes' '--with-dlz-mysql=yes' '--with-dlz-filesystem=yes' '--with-gssapi=yes' '--disable-isc-spnego' '--enable-fixed-rrset' '--with-docbook-xsl=/usr/share/sgml/docbook/xsl-stylesheets' '--enable-developer' '--enable-valgrind' '--disable-backtrace' '--disable-symtable' 'CC=/usr/bin/gcc' 'CXX=/usr/bin/g++' 'CFLAGS=-g3 -gdwarf-2' 'CXXFLAGS=-g3 -gdwarf-2' 'LDFLAGS=' 'build_alias=i686-redhat-linux-gnu' 'host_alias=i686-redhat-linux-gnu' 'target_alias=i686-redhat-linux-gnu'
 
 # Copyright (C) 2004, 2005, 2007, 2012  Internet Systems Consortium, Inc. ("ISC")
 # Copyright (C) 1999-2001  Internet Software Consortium.
@@ -56,7 +56,7 @@ ISC_INCLUDES = -I/home/radu/proj/bind9/lib/isc/include \
 	-I${top_srcdir}/lib/isc \
 	-I${top_srcdir}/lib/isc/include \
 	-I${top_srcdir}/lib/isc/unix/include \
-	-I${top_srcdir}/lib/isc/nothreads/include \
+	-I${top_srcdir}/lib/isc/pthreads/include \
 	-I${top_srcdir}/lib/isc/x86_32/include
 
 ISCCC_INCLUDES = -I/home/radu/proj/bind9/lib/isccc/include \
@@ -88,63 +88,62 @@ DBDRIVER_LIBS =
 
 DLZ_DRIVER_DIR =	${top_srcdir}/contrib/dlz/drivers
 
-DLZDRIVER_OBJS =	
-DLZDRIVER_SRCS =	
-DLZDRIVER_INCLUDES =	
-DLZDRIVER_LIBS =	
+DLZDRIVER_OBJS =	dlz_drivers.lo sdlz_helper.lo  dlz_postgres_driver.lo dlz_mysql_driver.lo dlz_filesystem_driver.lo dlz_ldap_driver.lo
+DLZDRIVER_SRCS =	${DLZ_DRIVER_DIR}/dlz_drivers.c ${DLZ_DRIVER_DIR}/sdlz_helper.c  ${DLZ_DRIVER_DIR}/dlz_postgres_driver.c ${DLZ_DRIVER_DIR}/dlz_mysql_driver.c ${DLZ_DRIVER_DIR}/dlz_filesystem_driver.c ${DLZ_DRIVER_DIR}/dlz_ldap_driver.c
+DLZDRIVER_INCLUDES =	-I${DLZ_DRIVER_DIR}/include  -I/usr/include -I/usr/include/mysql -I/usr/include
+DLZDRIVER_LIBS =	 -L/usr/lib -lpq -L/usr/lib -lmysqlclient -lz -lcrypt -lm -L/usr/lib -lldap -llber
 
 CINCLUDES =	-I${srcdir}/include -I${srcdir}/unix/include -I. \
 		${LWRES_INCLUDES} ${DNS_INCLUDES} ${BIND9_INCLUDES} \
 		${ISCCFG_INCLUDES} ${ISCCC_INCLUDES} ${ISC_INCLUDES} \
 		${DLZDRIVER_INCLUDES} ${DBDRIVER_INCLUDES} 
 
-CDEFINES =        -DOPENSSL
+CDEFINES =       -DOPENSSL
 
 CWARNINGS =
 
-DNSLIBS =	../../lib/dns/libdns.a  -lgssapi_krb5 -lcrypto
-ISCCFGLIBS =	../../lib/isccfg/libisccfg.a
-ISCCCLIBS =	../../lib/isccc/libisccc.a
-ISCLIBS =	../../lib/isc/libisc.a
-ISCNOSYMLIBS =	../../lib/isc/libisc-nosymtbl.a
-LWRESLIBS =	../../lib/lwres/liblwres.a
-BIND9LIBS =	../../lib/bind9/libbind9.a
+DNSLIBS =	../../lib/dns/libdns.la  -lgssapi_krb5 -lcrypto
+ISCCFGLIBS =	../../lib/isccfg/libisccfg.la
+ISCCCLIBS =	../../lib/isccc/libisccc.la
+ISCLIBS =	../../lib/isc/libisc.la
+ISCNOSYMLIBS =	../../lib/isc/libisc-nosymtbl.la
+LWRESLIBS =	../../lib/lwres/liblwres.la
+BIND9LIBS =	../../lib/bind9/libbind9.la
 
-DNSDEPLIBS =	../../lib/dns/libdns.a
-ISCCFGDEPLIBS =	../../lib/isccfg/libisccfg.a
-ISCCCDEPLIBS =	../../lib/isccc/libisccc.a
-ISCDEPLIBS =	../../lib/isc/libisc.a
-LWRESDEPLIBS =	../../lib/lwres/liblwres.a
-BIND9DEPLIBS =	../../lib/bind9/libbind9.a
+DNSDEPLIBS =	../../lib/dns/libdns.la
+ISCCFGDEPLIBS =	../../lib/isccfg/libisccfg.la
+ISCCCDEPLIBS =	../../lib/isccc/libisccc.la
+ISCDEPLIBS =	../../lib/isc/libisc.la
+LWRESDEPLIBS =	../../lib/lwres/liblwres.la
+BIND9DEPLIBS =	../../lib/bind9/libbind9.la
 
 DEPLIBS =	${LWRESDEPLIBS} ${DNSDEPLIBS} ${BIND9DEPLIBS} \
 		${ISCCFGDEPLIBS} ${ISCCCDEPLIBS} ${ISCDEPLIBS}
 
 LIBS =		${LWRESLIBS} ${DNSLIBS} ${BIND9LIBS} \
 		${ISCCFGLIBS} ${ISCCCLIBS} ${ISCLIBS} \
-		${DLZDRIVER_LIBS} ${DBDRIVER_LIBS} -ldl -lcap  -lxml2 -lz -lm
+		-ldl -lcap -lpthread  -lxml2 -lz -lm
 
 NOSYMLIBS =	${LWRESLIBS} ${DNSLIBS} ${BIND9LIBS} \
 		${ISCCFGLIBS} ${ISCCCLIBS} ${ISCNOSYMLIBS} \
-		${DLZDRIVER_LIBS} ${DBDRIVER_LIBS} -ldl -lcap  -lxml2 -lz -lm
+		-ldl -lcap -lpthread  -lxml2 -lz -lm
 
 SUBDIRS =	unix
 
 TARGETS =	named lwresd
 
-OBJS =		builtin.o client.o config.o control.o \
-		controlconf.o interfacemgr.o \
-		listenlist.o log.o logconf.o main.o notify.o \
-		query.o server.o sortlist.o statschannel.o \
-		tkeyconf.o tsigconf.o update.o xfrout.o \
-		zoneconf.o \
-		lwaddr.o lwresd.o lwdclient.o lwderror.o lwdgabn.o \
-		lwdgnba.o lwdgrbn.o lwdnoop.o lwsearch.o \
-		${DLZDRIVER_OBJS} ${DBDRIVER_OBJS}
+OBJS =		builtin.lo client.lo config.lo control.lo \
+		controlconf.lo interfacemgr.lo \
+		listenlist.lo log.lo logconf.lo main.lo notify.lo \
+		query.lo server.lo sortlist.lo statschannel.lo \
+		tkeyconf.lo tsigconf.lo update.lo xfrout.lo \
+		zoneconf.lo \
+		lwaddr.lo lwresd.lo lwdclient.lo lwderror.lo lwdgabn.lo \
+		lwdgnba.lo lwdgrbn.lo lwdnoop.lo lwsearch.lo
 
-UOBJS =		unix/os.o unix/dlz_dlopen_driver.o
+UOBJS =		unix/os.lo unix/dlz_dlopen_driver.lo
 
-SYMOBJS =	symtbl.o
+SYMOBJS =	symtbl.lo
 
 SRCS =		builtin.c client.c config.c control.c \
 		controlconf.c interfacemgr.c \
@@ -153,8 +152,7 @@ SRCS =		builtin.c client.c config.c control.c \
 		tkeyconf.c tsigconf.c update.c xfrout.c \
 		zoneconf.c \
 		lwaddr.c lwresd.c lwdclient.c lwderror.c lwdgabn.c \
-		lwdgnba.c lwdgrbn.c lwdnoop.c lwsearch.c \
-		${DLZDRIVER_SRCS} ${DBDRIVER_SRCS}
+		lwdgnba.c lwdgrbn.c lwdnoop.c lwsearch.c
 
 MANPAGES =	named.8 lwresd.8 named.conf.5
 
@@ -191,18 +189,18 @@ EXT_CFLAGS = -fpie
 ### Note: paths that vary by Makefile MUST NOT be listed
 ### here, or they won't get expanded correctly.
 
-prefix =	/usr/local
-exec_prefix =	${prefix}
-bindir =	${exec_prefix}/bin
-sbindir =	${exec_prefix}/sbin
-includedir =	${prefix}/include
-libdir =	${exec_prefix}/lib
+prefix =	/usr
+exec_prefix =	/usr
+bindir =	/usr/bin
+sbindir =	/usr/sbin
+includedir =	/usr/include/bind9
+libdir =	/usr/lib
 sysconfdir =	/etc
 localstatedir =	/var
-mandir =	${datarootdir}/man
+mandir =	/usr/share/man
 datarootdir =   ${prefix}/share
-export_libdir =	${exec_prefix}/lib/bind9/
-export_includedir = ${prefix}/include/bind9/
+export_libdir =	/usr/lib
+export_includedir = /usr/include
 
 DESTDIR =
 
@@ -278,21 +276,21 @@ install clean distclean maintainer-clean doc docclean man manclean::
 CC = 		/usr/bin/gcc
 CFLAGS =	-g3 -gdwarf-2 -I/usr/include/libxml2
 LDFLAGS =	
-STD_CINCLUDES =	
-STD_CDEFINES =	 -D_GNU_SOURCE
+STD_CINCLUDES =	 -I/home/radu/proj/bind9/unit/atf/include
+STD_CDEFINES =	 -DISC_LIST_CHECKINIT=1 -D_GNU_SOURCE
 STD_CWARNINGS =	 -W -Wall -Wmissing-prototypes -Wcast-qual -Wwrite-strings -Wformat -Wpointer-arith -fno-strict-aliasing -fno-delete-null-pointer-checks
 
 BUILD_CC = /usr/bin/gcc
 BUILD_CFLAGS = -g3 -gdwarf-2 -I/usr/include/libxml2
 BUILD_CPPFLAGS =  -D_GNU_SOURCE 
 BUILD_LDFLAGS = 
-BUILD_LIBS = -ldl -lcap  -lxml2 -lz -lm
+BUILD_LIBS = -ldl -lcap -lpthread  -lxml2 -lz -lm
 
 .SUFFIXES:
-.SUFFIXES: .c .o
+.SUFFIXES: .c .lo
 
 ALWAYS_INCLUDES = -I${top_builddir}
-ALWAYS_DEFINES = 
+ALWAYS_DEFINES = -D_REENTRANT
 ALWAYS_WARNINGS =
 
 ALL_CPPFLAGS = \
@@ -302,14 +300,14 @@ ALL_CPPFLAGS = \
 ALL_CFLAGS = ${EXT_CFLAGS} ${ALL_CPPFLAGS} ${CFLAGS} \
 	${ALWAYS_WARNINGS} ${STD_CWARNINGS} ${CWARNINGS}
 
-.c.o:
+%.lo:  ${srcdir}/%.c
 	${LIBTOOL_MODE_COMPILE} ${CC} ${ALL_CFLAGS} -c $<
 
 SHELL = /bin/sh
-LIBTOOL = 
-LIBTOOL_MODE_COMPILE = ${LIBTOOL} 
-LIBTOOL_MODE_INSTALL = ${LIBTOOL} 
-LIBTOOL_MODE_LINK = ${LIBTOOL} 
+LIBTOOL = $(SHELL) $(top_builddir)/libtool
+LIBTOOL_MODE_COMPILE = ${LIBTOOL} --mode=compile --tag=CC
+LIBTOOL_MODE_INSTALL = ${LIBTOOL} --mode=install --tag=CC
+LIBTOOL_MODE_LINK = ${LIBTOOL} --mode=link --tag=CC
 PURIFY = 
 
 MKDEP = ${SHELL} ${top_builddir}/make/mkdep
@@ -365,19 +363,19 @@ FINALBUILDCMD = if [ X"${MKSYMTBL_PROGRAM}" = X -o X"$${MAKE_SYMTABLE:-${ALWAYS_
 		rm -f $@tmp0; \
 		${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${ALL_CFLAGS} ${LDFLAGS} \
 		-o $@tmp0 $${BASEOBJS} $${LIBS0} ${LIBS} || exit 1; \
-		rm -f $@-symtbl.c $@-symtbl.o; \
+		rm -f $@-symtbl.c $@-symtbl.lo; \
 		${MKSYMTBL_PROGRAM} ${top_srcdir}/util/mksymtbl.pl \
 		-o $@-symtbl.c $@tmp0 || exit 1; \
-		$(MAKE) $@-symtbl.o || exit 1; \
+		$(MAKE) $@-symtbl.lo || exit 1; \
 		rm -f $@tmp1; \
 		${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${ALL_CFLAGS} ${LDFLAGS} \
-		-o $@tmp1 $${BASEOBJS} $@-symtbl.o $${LIBS0} ${NOSYMLIBS} || exit 1; \
-		rm -f $@-symtbl.c $@-symtbl.o; \
+		-o $@tmp1 $${BASEOBJS} $@-symtbl.lo $${LIBS0} ${NOSYMLIBS} || exit 1; \
+		rm -f $@-symtbl.c $@-symtbl.lo; \
 		${MKSYMTBL_PROGRAM} ${top_srcdir}/util/mksymtbl.pl \
 		-o $@-symtbl.c $@tmp1 || exit 1; \
-		$(MAKE) $@-symtbl.o || exit 1; \
+		$(MAKE) $@-symtbl.lo || exit 1; \
 		${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${ALL_CFLAGS} ${LDFLAGS} \
-		-o $@tmp2 $${BASEOBJS} $@-symtbl.o $${LIBS0} ${NOSYMLIBS}; \
+		-o $@tmp2 $${BASEOBJS} $@-symtbl.lo $${LIBS0} ${NOSYMLIBS}; \
 		${MKSYMTBL_PROGRAM} ${top_srcdir}/util/mksymtbl.pl \
 		-o $@-symtbl2.c $@tmp2; \
 		count=0; \
@@ -385,12 +383,12 @@ FINALBUILDCMD = if [ X"${MKSYMTBL_PROGRAM}" = X -o X"$${MAKE_SYMTABLE:-${ALWAYS_
 		do \
 			count=`expr $$count + 1` ; \
 			test $$count = 42 && exit 1 ; \
-			rm -f $@-symtbl.c $@-symtbl.o; \
+			rm -f $@-symtbl.c $@-symtbl.lo; \
 			${MKSYMTBL_PROGRAM} ${top_srcdir}/util/mksymtbl.pl \
 			-o $@-symtbl.c $@tmp2 || exit 1; \
-			$(MAKE) $@-symtbl.o || exit 1; \
+			$(MAKE) $@-symtbl.lo || exit 1; \
 			${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${ALL_CFLAGS} \
-			${LDFLAGS} -o $@tmp2 $${BASEOBJS} $@-symtbl.o \
+			${LDFLAGS} -o $@tmp2 $${BASEOBJS} $@-symtbl.lo \
 			$${LIBS0} ${NOSYMLIBS}; \
 			${MKSYMTBL_PROGRAM} ${top_srcdir}/util/mksymtbl.pl \
 			-o $@-symtbl2.c $@tmp2; \
@@ -403,7 +401,7 @@ cleandir: distclean
 superclean: maintainer-clean
 
 clean distclean maintainer-clean::
-	rm -f *.o *.o *.lo *.la core *.core *-symtbl.c *tmp0 *tmp1 *tmp2
+	rm -f *.lo *.o *.lo *.la core *.core *-symtbl.c *tmp0 *tmp1 *tmp2
 	rm -rf .depend .libs
 
 distclean maintainer-clean::
@@ -484,7 +482,7 @@ W3M =			w3m
 ###
 ### Script language program used to create internal symbol tables
 ###
-MKSYMTBL_PROGRAM =	/usr/bin/perl
+MKSYMTBL_PROGRAM =	
 
 ###
 ### Switch to create internal symbol table selectively
@@ -536,7 +534,7 @@ ALWAYS_MAKE_SYMTABLE =
 
 LDFLAGS += -pie -Wl,-z,relro,-z,now,-z,nodlopen,-z,noexecstack
 
-main.o: main.c
+main.lo: main.c
 	${LIBTOOL_MODE_COMPILE} ${CC} ${ALL_CFLAGS} \
 		-DVERSION=\"${VERSION}\" \
 		-DPRODUCT=\"${PRODUCT}\" \
@@ -550,7 +548,7 @@ main.o: main.c
 bind.keys.h: ${top_srcdir}/bind.keys ${srcdir}/bindkeys.pl
 	${PERL} ${srcdir}/bindkeys.pl < ${top_srcdir}/bind.keys > $@
 
-config.o: config.c bind.keys.h
+config.lo: config.c bind.keys.h
 	${LIBTOOL_MODE_COMPILE} ${CC} ${ALL_CFLAGS} \
 		-DVERSION=\"${VERSION}\" \
 		-DSRCID=\"${SRCID}\" \
@@ -585,7 +583,7 @@ bind9.ver3.xsl.h: bind9.ver3.xsl ${srcdir}/convertxsl.pl
 	${PERL} ${srcdir}/convertxsl.pl < ${srcdir}/bind9.ver3.xsl > bind9.ver3.xsl.h
 
 depend: bind9.xsl.h bind9.ver3.xsl.h
-statschannel.o: bind9.xsl.h bind9.ver3.xsl.h
+statschannel.lo: bind9.xsl.h bind9.ver3.xsl.h
 
 installdirs:
 	$(SHELL) ${top_srcdir}/mkinstalldirs ${DESTDIR}${sbindir}
@@ -599,6 +597,5 @@ install:: named lwresd installdirs
 	${INSTALL_DATA} ${srcdir}/lwresd.8 ${DESTDIR}${mandir}/man8
 	${INSTALL_DATA} ${srcdir}/named.conf.5 ${DESTDIR}${mandir}/man5
 
-
-named-symtbl.o: named-symtbl.c
+named-symtbl.lo: named-symtbl.c
 	${LIBTOOL_MODE_COMPILE} ${CC} ${ALL_CFLAGS} -c named-symtbl.c

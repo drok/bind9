@@ -25,7 +25,7 @@ ISC_INCLUDES = -I/home/radu/proj/bind9/lib/isc/include \
 	-I${top_srcdir}/lib/isc \
 	-I${top_srcdir}/lib/isc/include \
 	-I${top_srcdir}/lib/isc/unix/include \
-	-I${top_srcdir}/lib/isc/nothreads/include \
+	-I${top_srcdir}/lib/isc/pthreads/include \
 	-I${top_srcdir}/lib/isc/x86_32/include
 
 ISCCC_INCLUDES = -I/home/radu/proj/bind9/lib/isccc/include \

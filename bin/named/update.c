@@ -237,6 +237,23 @@ static void forward_done(isc_task_t *task, isc_event_t *event);
 /**************************************************************************/
 
 static void
+printrr(const char *msg, unsigned int line, dns_rdata_t *rdata)
+{
+	isc_buffer_t textb;
+	isc_region_t r;
+	char text_array[DST_KEY_MAXTEXTSIZE];
+
+	isc_buffer_init(&textb, text_array, sizeof(text_array));
+
+	dns_rdata_totext(rdata, (dns_name_t *) NULL, &textb);
+	isc_buffer_usedregion(&textb, &r);
+	r.base[r.length]='\0';
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u -  %s ", msg, line, r.base);
+
+}
+
+
+static void
 update_log(ns_client_t *client, dns_zone_t *zone,
 	   int level, const char *fmt, ...) ISC_FORMAT_PRINTF(4, 5);
 
@@ -627,10 +644,13 @@ foreach_rr(dns_db_t *db, dns_dbversion_t *ver, dns_name_t *name,
 
 	node = NULL;
 	if (type == dns_rdatatype_nsec3 ||
-	    (type == dns_rdatatype_rrsig && covers == dns_rdatatype_nsec3))
+	    (type == dns_rdatatype_rrsig && covers == dns_rdatatype_nsec3)) {
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s ", __FILE__, __LINE__, __FUNCTION__);
 		result = dns_db_findnsec3node(db, name, ISC_FALSE, &node);
-	else
+	} else {
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s ", __FILE__, __LINE__, __FUNCTION__);
 		result = dns_db_findnode(db, name, ISC_FALSE, &node);
+	}
 	if (result == ISC_R_NOTFOUND)
 		return (ISC_R_SUCCESS);
 	if (result != ISC_R_SUCCESS)
@@ -653,7 +673,9 @@ foreach_rr(dns_db_t *db, dns_dbversion_t *ver, dns_name_t *name,
 		rr_t rr = { 0, DNS_RDATA_INIT };
 		dns_rdataset_current(&rdataset, &rr.rdata);
 		rr.ttl = rdataset.ttl;
-		result = (*rr_action)(rr_action_data, &rr);
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s ", __FILE__, __LINE__, __FUNCTION__);
+printrr(__FILE__, __LINE__, &rr.rdata);
+result = (*rr_action)(rr_action_data, &rr);
 		if (result != ISC_R_SUCCESS)
 			goto cleanup_rdataset;
 	}
@@ -1296,16 +1318,20 @@ add_rr_prepare_action(void *data, rr_t *rr) {
 	 * the update should be silently ignored.
 	 */
 	equal = ISC_TF(dns_rdata_casecompare(&rr->rdata, ctx->update_rr) == 0);
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s rr->ttl=%u ctx->update_rr_ttl=%u equal=%u", __FILE__, __LINE__, __FUNCTION__, rr->ttl, ctx->update_rr_ttl, equal);
 	if (equal && rr->ttl == ctx->update_rr_ttl) {
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s ", __FILE__, __LINE__, __FUNCTION__);
 		ctx->ignore_add = ISC_TRUE;
 		return (ISC_R_SUCCESS);
 	}
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s ", __FILE__, __LINE__, __FUNCTION__);
 
 	/*
 	 * If this RR is "equal" to the update RR, it should
 	 * be deleted before the update RR is added.
 	 */
 	if (replaces_p(ctx->update_rr, &rr->rdata)) {
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s ", __FILE__, __LINE__, __FUNCTION__);
 		CHECK(dns_difftuple_create(ctx->del_diff.mctx, DNS_DIFFOP_DEL,
 					   ctx->name, rr->ttl, &rr->rdata,
 					   &tuple));
@@ -1318,11 +1344,13 @@ add_rr_prepare_action(void *data, rr_t *rr) {
 	 * its TTL must be adjusted.
 	 */
 	if (rr->ttl != ctx->update_rr_ttl) {
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s ", __FILE__, __LINE__, __FUNCTION__);
 		CHECK(dns_difftuple_create(ctx->del_diff.mctx, DNS_DIFFOP_DEL,
 					   ctx->name, rr->ttl, &rr->rdata,
 					   &tuple));
 		dns_diff_append(&ctx->del_diff, &tuple);
 		if (!equal) {
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s ", __FILE__, __LINE__, __FUNCTION__);
 			CHECK(dns_difftuple_create(ctx->add_diff.mctx,
 						   DNS_DIFFOP_ADD, ctx->name,
 						   ctx->update_rr_ttl,
@@ -1330,6 +1358,7 @@ add_rr_prepare_action(void *data, rr_t *rr) {
 			dns_diff_append(&ctx->add_diff, &tuple);
 		}
 	}
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s ", __FILE__, __LINE__, __FUNCTION__);
  failure:
 	return (result);
 }
@@ -1883,6 +1912,7 @@ check_dnssec(ns_client_t *client, dns_zone_t *zone, dns_db_t *db,
 	unsigned int iterations = 0, max;
 	dns_rdatatype_t privatetype = dns_zone_getprivatetype(zone);
 
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s ", __FILE__, __LINE__, __FUNCTION__);
 	/* Scan the tuples for an NSEC-only DNSKEY or an NSEC3PARAM */
 	for (tuple = ISC_LIST_HEAD(diff->tuples);
 	     tuple != NULL;
@@ -2703,6 +2733,7 @@ update_action(isc_task_t *task, isc_event_t *event) {
 				tsigkey = client->message->tsigkey->key;
 
 			if (rdata.type != dns_rdatatype_any) {
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s zone=%p ", __FILE__, __LINE__, __FUNCTION__, zone);
 				if (!dns_ssutable_checkrules(ssutable,
 							     client->signer,
 							     name, tcpaddr,
@@ -2711,6 +2742,7 @@ update_action(isc_task_t *task, isc_event_t *event) {
 					FAILC(DNS_R_REFUSED,
 					      "rejected by secure update");
 			} else {
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s ", __FILE__, __LINE__, __FUNCTION__);
 				if (!ssu_checkall(db, ver, name, ssutable,
 						  client->signer, tcpaddr,
 						  tsigkey))
@@ -2740,10 +2772,12 @@ update_action(isc_task_t *task, isc_event_t *event) {
 		dns_rdataclass_t update_class;
 		isc_boolean_t flag;
 
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s ", __FILE__, __LINE__, __FUNCTION__);
 		get_current_rr(request, DNS_SECTION_UPDATE, zoneclass,
 			       &name, &rdata, &covers, &ttl, &update_class);
 
 		if (update_class == zoneclass) {
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s ", __FILE__, __LINE__, __FUNCTION__);
 
 			/*
 			 * RFC1123 doesn't allow MF and MD in master zones.				 */
@@ -2866,6 +2900,7 @@ update_action(isc_task_t *task, isc_event_t *event) {
 					   "adding an RR at '%s' %s",
 					   namestr, typestr);
 			}
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s ", __FILE__, __LINE__, __FUNCTION__);
 
 			/* Prepare the affected RRset for the addition. */
 			{
@@ -2879,11 +2914,13 @@ update_action(isc_task_t *task, isc_event_t *event) {
 				ctx.ignore_add = ISC_FALSE;
 				dns_diff_init(mctx, &ctx.del_diff);
 				dns_diff_init(mctx, &ctx.add_diff);
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s ", __FILE__, __LINE__, __FUNCTION__);
 				CHECK(foreach_rr(db, ver, name, rdata.type,
 						 covers, add_rr_prepare_action,
 						 &ctx));
 
 				if (ctx.ignore_add) {
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s ", __FILE__, __LINE__, __FUNCTION__);
 					dns_diff_clear(&ctx.del_diff);
 					dns_diff_clear(&ctx.add_diff);
 				} else {
@@ -2891,12 +2928,14 @@ update_action(isc_task_t *task, isc_event_t *event) {
 						      &diff));
 					CHECK(do_diff(&ctx.add_diff, db, ver,
 						      &diff));
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s ", __FILE__, __LINE__, __FUNCTION__);
 					CHECK(update_one_rr(db, ver, &diff,
 							    DNS_DIFFOP_ADD,
 							    name, ttl, &rdata));
 				}
 			}
 		} else if (update_class == dns_rdataclass_any) {
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s ", __FILE__, __LINE__, __FUNCTION__);
 			if (rdata.type == dns_rdatatype_any) {
 				if (isc_log_wouldlog(ns_g_lctx,
 						     LOGLEVEL_PROTOCOL))
@@ -2910,11 +2949,13 @@ update_action(isc_task_t *task, isc_event_t *event) {
 						   "name '%s'", namestr);
 				}
 				if (dns_name_equal(name, zonename)) {
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s ", __FILE__, __LINE__, __FUNCTION__);
 					CHECK(delete_if(type_not_soa_nor_ns_p,
 							db, ver, name,
 							dns_rdatatype_any, 0,
 							&rdata, &diff));
 				} else {
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s ", __FILE__, __LINE__, __FUNCTION__);
 					CHECK(delete_if(type_not_dnssec,
 							db, ver, name,
 							dns_rdatatype_any, 0,
@@ -2928,6 +2969,7 @@ update_action(isc_task_t *task, isc_event_t *event) {
 					   "or NS records ignored");
 				continue;
 			} else {
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s ", __FILE__, __LINE__, __FUNCTION__);
 				if (isc_log_wouldlog(ns_g_lctx,
 						     LOGLEVEL_PROTOCOL))
 				{
@@ -2951,6 +2993,7 @@ update_action(isc_task_t *task, isc_event_t *event) {
 			char namestr[DNS_NAME_FORMATSIZE];
 			char typestr[DNS_RDATATYPE_FORMATSIZE];
 
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s ", __FILE__, __LINE__, __FUNCTION__);
 			/*
 			 * The (name == zonename) condition appears in
 			 * RFC2136 3.4.2.4 but is missing from the pseudocode.
@@ -2995,11 +3038,16 @@ update_action(isc_task_t *task, isc_event_t *event) {
 	 * If they don't then back out all changes to DNSKEY/NSEC3PARAM
 	 * records.
 	 */
-	if (! ISC_LIST_EMPTY(diff.tuples))
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s ", __FILE__, __LINE__, __FUNCTION__);
+	if (! ISC_LIST_EMPTY(diff.tuples)) {
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s ", __FILE__, __LINE__, __FUNCTION__);
 		CHECK(check_dnssec(client, zone, db, ver, &diff));
+	}
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s ", __FILE__, __LINE__, __FUNCTION__);
 
 	if (! ISC_LIST_EMPTY(diff.tuples)) {
 		unsigned int errors = 0;
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s ", __FILE__, __LINE__, __FUNCTION__);
 		CHECK(dns_zone_nscheck(zone, db, ver, &errors));
 		if (errors != 0) {
 			update_log(client, zone, LOGLEVEL_PROTOCOL,
@@ -3015,6 +3063,7 @@ update_action(isc_task_t *task, isc_event_t *event) {
 	 * update RRSIGs and NSECs (if zone is secure), and write the update
 	 * to the journal.
 	 */
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s ", __FILE__, __LINE__, __FUNCTION__);
 	if (! ISC_LIST_EMPTY(diff.tuples)) {
 		char *journalfile;
 		dns_journal_t *journal;
@@ -3024,6 +3073,7 @@ update_action(isc_task_t *task, isc_event_t *event) {
 		 * Increment the SOA serial, but only if it was not
 		 * changed as a result of an update operation.
 		 */
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s ", __FILE__, __LINE__, __FUNCTION__);
 		if (! soa_serial_changed) {
 			CHECK(update_soa_serial(db, ver, &diff, mctx,
 				       dns_zone_getserialupdatemethod(zone)));
@@ -3033,8 +3083,10 @@ update_action(isc_task_t *task, isc_event_t *event) {
 
 		CHECK(remove_orphaned_ds(db, ver, &diff));
 
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s ", __FILE__, __LINE__, __FUNCTION__);
 		CHECK(rrset_exists(db, ver, zonename, dns_rdatatype_dnskey,
 				   0, &has_dnskey));
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s ", __FILE__, __LINE__, __FUNCTION__);
 
 #define ALLOW_SECURE_TO_INSECURE(zone) \
 	((dns_zone_getoptions(zone) & DNS_ZONEOPT_SECURETOINSECURE) != 0)
@@ -3056,11 +3108,14 @@ update_action(isc_task_t *task, isc_event_t *event) {
 
 		CHECK(rollback_private(db, privatetype, ver, &diff));
 
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s ", __FILE__, __LINE__, __FUNCTION__);
 		CHECK(add_signing_records(db, privatetype, ver, &diff));
 
 		CHECK(add_nsec3param_records(client, zone, db, ver, &diff));
 
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s ", __FILE__, __LINE__, __FUNCTION__);
 		if (had_dnskey && !has_dnskey) {
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s ", __FILE__, __LINE__, __FUNCTION__);
 			/*
 			 * We are transitioning from secure to insecure.
 			 * Cause all NSEC3 chains to be deleted.  When the
@@ -3076,6 +3131,7 @@ update_action(isc_task_t *task, isc_event_t *event) {
 			interval = dns_zone_getsigvalidityinterval(zone);
 			log.func = update_log_cb;
 			log.arg = client;
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s:zone=%p", __FILE__, __LINE__, __FUNCTION__, zone);
 			result = dns_update_signatures(&log, zone, db, oldver,
 						       ver, &diff, interval);
 
@@ -3135,6 +3191,7 @@ update_action(isc_task_t *task, isc_event_t *event) {
 		 *
 		 * Note: we are already committed to this course of action.
 		 */
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s ", __FILE__, __LINE__, __FUNCTION__);
 		for (tuple = ISC_LIST_HEAD(diff.tuples);
 		     tuple != NULL;
 		     tuple = ISC_LIST_NEXT(tuple, link)) {
@@ -3142,9 +3199,11 @@ update_action(isc_task_t *task, isc_event_t *event) {
 			dns_secalg_t algorithm;
 			isc_uint16_t keyid;
 
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s ", __FILE__, __LINE__, __FUNCTION__);
 			if (tuple->rdata.type != dns_rdatatype_dnskey)
 				continue;
 
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s ", __FILE__, __LINE__, __FUNCTION__);
 			dns_rdata_tostruct(&tuple->rdata, &dnskey, NULL);
 			if ((dnskey.flags &
 			     (DNS_KEYFLAG_OWNERMASK|DNS_KEYTYPE_NOAUTH))
@@ -3155,6 +3214,7 @@ update_action(isc_task_t *task, isc_event_t *event) {
 			algorithm = dnskey.algorithm;
 			keyid = dst_region_computeid(&r, algorithm);
 
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s ", __FILE__, __LINE__, __FUNCTION__);
 			result = dns_zone_signwithkey(zone, algorithm, keyid,
 					ISC_TF(tuple->op == DNS_DIFFOP_DEL));
 			if (result != ISC_R_SUCCESS) {
@@ -3170,6 +3230,7 @@ update_action(isc_task_t *task, isc_event_t *event) {
 		 *
 		 * Note: we are already committed to this course of action.
 		 */
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s zone=%p ", __FILE__, __LINE__, __FUNCTION__, zone);
 		for (tuple = ISC_LIST_HEAD(diff.tuples);
 		     tuple != NULL;
 		     tuple = ISC_LIST_NEXT(tuple, link)) {
@@ -3213,6 +3274,7 @@ update_action(isc_task_t *task, isc_event_t *event) {
 	}
 
  common:
+isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s zone=%p ", __FILE__, __LINE__, __FUNCTION__, zone);
 	dns_diff_clear(&temp);
 	dns_diff_clear(&diff);
 

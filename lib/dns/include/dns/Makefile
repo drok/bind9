@@ -24,14 +24,14 @@ VERSION=9.9.5-P1
 HEADERS =	acl.h adb.h byaddr.h cache.h callbacks.h cert.h compress.h \
 		client.h clientinfo.h compress.h \
 		db.h dbiterator.h dbtable.h diff.h dispatch.h dynamic_db.h \
-		dlz.h dnssec.h ds.h events.h fixedname.h iptable.h journal.h \
+		dlz.h dnssec.h ds.h events.h fixedname.h forward.h iptable.h journal.h \
 		keyflags.h keytable.h keyvalues.h lib.h log.h \
 		master.h masterdump.h message.h name.h ncache.h nsec.h \
 		peer.h portlist.h private.h rbt.h rcode.h \
 		rdata.h rdataclass.h rdatalist.h rdataset.h rdatasetiter.h \
 		rdataslab.h rdatatype.h request.h resolver.h result.h \
-		rootns.h rpz.h sdb.h sdlz.h secalg.h secproto.h soa.h ssu.h \
-		tcpmsg.h time.h tkey.h tsec.h tsig.h ttl.h types.h \
+		rootns.h rpz.h rrl.h sdb.h sdlz.h secalg.h secproto.h soa.h ssu.h \
+		tcpmsg.h time.h tkey.h tsec.h tsig.h ttl.h types.h update.h \
 		validator.h version.h view.h xfrin.h zone.h zonekey.h zt.h
 
 GENHEADERS =	enumclass.h enumtype.h rdatastruct.h
@@ -66,18 +66,18 @@ TARGETS =
 ### Note: paths that vary by Makefile MUST NOT be listed
 ### here, or they won't get expanded correctly.
 
-prefix =	/usr/local
-exec_prefix =	${prefix}
-bindir =	${exec_prefix}/bin
-sbindir =	${exec_prefix}/sbin
-includedir =	${prefix}/include
-libdir =	${exec_prefix}/lib
+prefix =	/usr
+exec_prefix =	/usr
+bindir =	/usr/bin
+sbindir =	/usr/sbin
+includedir =	/usr/include/bind9
+libdir =	/usr/lib
 sysconfdir =	/etc
 localstatedir =	/var
-mandir =	${datarootdir}/man
+mandir =	/usr/share/man
 datarootdir =   ${prefix}/share
-export_libdir =	${exec_prefix}/lib/bind9/
-export_includedir = ${prefix}/include/bind9/
+export_libdir =	/usr/lib
+export_includedir = /usr/include
 
 DESTDIR =
 
@@ -153,21 +153,21 @@ install clean distclean maintainer-clean doc docclean man manclean::
 CC = 		/usr/bin/gcc
 CFLAGS =	-g3 -gdwarf-2 -I/usr/include/libxml2
 LDFLAGS =	
-STD_CINCLUDES =	
-STD_CDEFINES =	 -D_GNU_SOURCE
+STD_CINCLUDES =	 -I/home/radu/proj/bind9/unit/atf/include
+STD_CDEFINES =	 -DISC_LIST_CHECKINIT=1 -D_GNU_SOURCE
 STD_CWARNINGS =	 -W -Wall -Wmissing-prototypes -Wcast-qual -Wwrite-strings -Wformat -Wpointer-arith -fno-strict-aliasing -fno-delete-null-pointer-checks
 
 BUILD_CC = /usr/bin/gcc
 BUILD_CFLAGS = -g3 -gdwarf-2 -I/usr/include/libxml2
 BUILD_CPPFLAGS =  -D_GNU_SOURCE 
 BUILD_LDFLAGS = 
-BUILD_LIBS = -ldl -lcap  -lxml2 -lz -lm
+BUILD_LIBS = -ldl -lcap -lpthread  -lxml2 -lz -lm
 
 .SUFFIXES:
-.SUFFIXES: .c .o
+.SUFFIXES: .c .lo
 
 ALWAYS_INCLUDES = -I${top_builddir}
-ALWAYS_DEFINES = 
+ALWAYS_DEFINES = -D_REENTRANT
 ALWAYS_WARNINGS =
 
 ALL_CPPFLAGS = \
@@ -177,14 +177,14 @@ ALL_CPPFLAGS = \
 ALL_CFLAGS = ${EXT_CFLAGS} ${ALL_CPPFLAGS} ${CFLAGS} \
 	${ALWAYS_WARNINGS} ${STD_CWARNINGS} ${CWARNINGS}
 
-.c.o:
+%.lo:  ${srcdir}/%.c
 	${LIBTOOL_MODE_COMPILE} ${CC} ${ALL_CFLAGS} -c $<
 
 SHELL = /bin/sh
-LIBTOOL = 
-LIBTOOL_MODE_COMPILE = ${LIBTOOL} 
-LIBTOOL_MODE_INSTALL = ${LIBTOOL} 
-LIBTOOL_MODE_LINK = ${LIBTOOL} 
+LIBTOOL = $(SHELL) $(top_builddir)/libtool
+LIBTOOL_MODE_COMPILE = ${LIBTOOL} --mode=compile --tag=CC
+LIBTOOL_MODE_INSTALL = ${LIBTOOL} --mode=install --tag=CC
+LIBTOOL_MODE_LINK = ${LIBTOOL} --mode=link --tag=CC
 PURIFY = 
 
 MKDEP = ${SHELL} ${top_builddir}/make/mkdep
@@ -240,19 +240,19 @@ FINALBUILDCMD = if [ X"${MKSYMTBL_PROGRAM}" = X -o X"$${MAKE_SYMTABLE:-${ALWAYS_
 		rm -f $@tmp0; \
 		${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${ALL_CFLAGS} ${LDFLAGS} \
 		-o $@tmp0 $${BASEOBJS} $${LIBS0} ${LIBS} || exit 1; \
-		rm -f $@-symtbl.c $@-symtbl.o; \
+		rm -f $@-symtbl.c $@-symtbl.lo; \
 		${MKSYMTBL_PROGRAM} ${top_srcdir}/util/mksymtbl.pl \
 		-o $@-symtbl.c $@tmp0 || exit 1; \
-		$(MAKE) $@-symtbl.o || exit 1; \
+		$(MAKE) $@-symtbl.lo || exit 1; \
 		rm -f $@tmp1; \
 		${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${ALL_CFLAGS} ${LDFLAGS} \
-		-o $@tmp1 $${BASEOBJS} $@-symtbl.o $${LIBS0} ${NOSYMLIBS} || exit 1; \
-		rm -f $@-symtbl.c $@-symtbl.o; \
+		-o $@tmp1 $${BASEOBJS} $@-symtbl.lo $${LIBS0} ${NOSYMLIBS} || exit 1; \
+		rm -f $@-symtbl.c $@-symtbl.lo; \
 		${MKSYMTBL_PROGRAM} ${top_srcdir}/util/mksymtbl.pl \
 		-o $@-symtbl.c $@tmp1 || exit 1; \
-		$(MAKE) $@-symtbl.o || exit 1; \
+		$(MAKE) $@-symtbl.lo || exit 1; \
 		${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${ALL_CFLAGS} ${LDFLAGS} \
-		-o $@tmp2 $${BASEOBJS} $@-symtbl.o $${LIBS0} ${NOSYMLIBS}; \
+		-o $@tmp2 $${BASEOBJS} $@-symtbl.lo $${LIBS0} ${NOSYMLIBS}; \
 		${MKSYMTBL_PROGRAM} ${top_srcdir}/util/mksymtbl.pl \
 		-o $@-symtbl2.c $@tmp2; \
 		count=0; \
@@ -260,12 +260,12 @@ FINALBUILDCMD = if [ X"${MKSYMTBL_PROGRAM}" = X -o X"$${MAKE_SYMTABLE:-${ALWAYS_
 		do \
 			count=`expr $$count + 1` ; \
 			test $$count = 42 && exit 1 ; \
-			rm -f $@-symtbl.c $@-symtbl.o; \
+			rm -f $@-symtbl.c $@-symtbl.lo; \
 			${MKSYMTBL_PROGRAM} ${top_srcdir}/util/mksymtbl.pl \
 			-o $@-symtbl.c $@tmp2 || exit 1; \
-			$(MAKE) $@-symtbl.o || exit 1; \
+			$(MAKE) $@-symtbl.lo || exit 1; \
 			${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${ALL_CFLAGS} \
-			${LDFLAGS} -o $@tmp2 $${BASEOBJS} $@-symtbl.o \
+			${LDFLAGS} -o $@tmp2 $${BASEOBJS} $@-symtbl.lo \
 			$${LIBS0} ${NOSYMLIBS}; \
 			${MKSYMTBL_PROGRAM} ${top_srcdir}/util/mksymtbl.pl \
 			-o $@-symtbl2.c $@tmp2; \
@@ -278,7 +278,7 @@ cleandir: distclean
 superclean: maintainer-clean
 
 clean distclean maintainer-clean::
-	rm -f *.o *.o *.lo *.la core *.core *-symtbl.c *tmp0 *tmp1 *tmp2
+	rm -f *.lo *.o *.lo *.la core *.core *-symtbl.c *tmp0 *tmp1 *tmp2
 	rm -rf .depend .libs
 
 distclean maintainer-clean::
@@ -359,7 +359,7 @@ W3M =			w3m
 ###
 ### Script language program used to create internal symbol tables
 ###
-MKSYMTBL_PROGRAM =	/usr/bin/perl
+MKSYMTBL_PROGRAM =	
 
 ###
 ### Switch to create internal symbol table selectively

@@ -22,7 +22,7 @@
 # depends on another header having been included first.
 #
 
-prefix=/usr/local
+prefix=/usr
 tmp=/tmp/thdr$$.tmp
 
 status=0
@@ -44,7 +44,7 @@ EOF
 
     # Compile the test program.
     if
-       gcc  -W -Wall -Wmissing-prototypes -Wcast-qual -Wwrite-strings -Wformat -Wpointer-arith -fno-strict-aliasing -fno-delete-null-pointer-checks  -I$prefix/include -c test.c 2>&1
+       gcc  -W -Wall -Wmissing-prototypes -Wcast-qual -Wwrite-strings -Wformat -Wpointer-arith -fno-strict-aliasing -fno-delete-null-pointer-checks  -I/home/radu/proj/bind9/unit/atf/include -I$prefix/include -c test.c 2>&1
     then
        :
     else

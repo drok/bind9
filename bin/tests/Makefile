@@ -46,7 +46,7 @@ ISC_INCLUDES = -I/home/radu/proj/bind9/lib/isc/include \
 	-I${top_srcdir}/lib/isc \
 	-I${top_srcdir}/lib/isc/include \
 	-I${top_srcdir}/lib/isc/unix/include \
-	-I${top_srcdir}/lib/isc/nothreads/include \
+	-I${top_srcdir}/lib/isc/pthreads/include \
 	-I${top_srcdir}/lib/isc/x86_32/include
 
 ISCCC_INCLUDES = -I/home/radu/proj/bind9/lib/isccc/include \
@@ -74,19 +74,19 @@ CINCLUDES =	${DNS_INCLUDES} ${ISC_INCLUDES} ${ISCCFG_INCLUDES} \
 CDEFINES =
 CWARNINGS =
 
-DNSLIBS =	../../lib/dns/libdns.a  -lgssapi_krb5 -lcrypto
-ISCLIBS =	../../lib/isc/libisc.a  -lgssapi_krb5 -lcrypto
-ISCNOSYMLIBS =	../../lib/isc/libisc-nosymtbl.a  -lgssapi_krb5 -lcrypto
-ISCCFGLIBS = 	../../lib/isccfg/libisccfg.a
-LWRESLIBS =	../../lib/lwres/liblwres.a
+DNSLIBS =	../../lib/dns/libdns.la  -lgssapi_krb5 -lcrypto
+ISCLIBS =	../../lib/isc/libisc.la  -lgssapi_krb5 -lcrypto
+ISCNOSYMLIBS =	../../lib/isc/libisc-nosymtbl.la  -lgssapi_krb5 -lcrypto
+ISCCFGLIBS = 	../../lib/isccfg/libisccfg.la
+LWRESLIBS =	../../lib/lwres/liblwres.la
 
-DNSDEPLIBS =	../../lib/dns/libdns.a
-ISCDEPLIBS =	../../lib/isc/libisc.a
-ISCDEPNOSYMLIBS = ../../lib/isc/libisc-nosymtbl.a
-ISCCFGDEPLIBS = ../../lib/isccfg/libisccfg.a
-LWRESDEPLIBS =	../../lib/lwres/liblwres.a
+DNSDEPLIBS =	../../lib/dns/libdns.la
+ISCDEPLIBS =	../../lib/isc/libisc.la
+ISCDEPNOSYMLIBS = ../../lib/isc/libisc-nosymtbl.la
+ISCCFGDEPLIBS = ../../lib/isccfg/libisccfg.la
+LWRESDEPLIBS =	../../lib/lwres/liblwres.la
 
-LIBS =		-ldl -lcap  -lxml2 -lz -lm
+LIBS =		-ldl -lcap -lpthread  -lxml2 -lz -lm
 
 SUBDIRS =	atomic db dst master mem hashes names net rbt resolver \
 		sockaddr tasks timers system
@@ -206,18 +206,18 @@ XSRCS =		adb_test.c \
 ### Note: paths that vary by Makefile MUST NOT be listed
 ### here, or they won't get expanded correctly.
 
-prefix =	/usr/local
-exec_prefix =	${prefix}
-bindir =	${exec_prefix}/bin
-sbindir =	${exec_prefix}/sbin
-includedir =	${prefix}/include
-libdir =	${exec_prefix}/lib
+prefix =	/usr
+exec_prefix =	/usr
+bindir =	/usr/bin
+sbindir =	/usr/sbin
+includedir =	/usr/include/bind9
+libdir =	/usr/lib
 sysconfdir =	/etc
 localstatedir =	/var
-mandir =	${datarootdir}/man
+mandir =	/usr/share/man
 datarootdir =   ${prefix}/share
-export_libdir =	${exec_prefix}/lib/bind9/
-export_includedir = ${prefix}/include/bind9/
+export_libdir =	/usr/lib
+export_includedir = /usr/include
 
 DESTDIR =
 
@@ -293,21 +293,21 @@ install clean distclean maintainer-clean doc docclean man manclean::
 CC = 		/usr/bin/gcc
 CFLAGS =	-g3 -gdwarf-2 -I/usr/include/libxml2
 LDFLAGS =	
-STD_CINCLUDES =	
-STD_CDEFINES =	 -D_GNU_SOURCE
+STD_CINCLUDES =	 -I/home/radu/proj/bind9/unit/atf/include
+STD_CDEFINES =	 -DISC_LIST_CHECKINIT=1 -D_GNU_SOURCE
 STD_CWARNINGS =	 -W -Wall -Wmissing-prototypes -Wcast-qual -Wwrite-strings -Wformat -Wpointer-arith -fno-strict-aliasing -fno-delete-null-pointer-checks
 
 BUILD_CC = /usr/bin/gcc
 BUILD_CFLAGS = -g3 -gdwarf-2 -I/usr/include/libxml2
 BUILD_CPPFLAGS =  -D_GNU_SOURCE 
 BUILD_LDFLAGS = 
-BUILD_LIBS = -ldl -lcap  -lxml2 -lz -lm
+BUILD_LIBS = -ldl -lcap -lpthread  -lxml2 -lz -lm
 
 .SUFFIXES:
-.SUFFIXES: .c .o
+.SUFFIXES: .c .lo
 
 ALWAYS_INCLUDES = -I${top_builddir}
-ALWAYS_DEFINES = 
+ALWAYS_DEFINES = -D_REENTRANT
 ALWAYS_WARNINGS =
 
 ALL_CPPFLAGS = \
@@ -317,14 +317,14 @@ ALL_CPPFLAGS = \
 ALL_CFLAGS = ${EXT_CFLAGS} ${ALL_CPPFLAGS} ${CFLAGS} \
 	${ALWAYS_WARNINGS} ${STD_CWARNINGS} ${CWARNINGS}
 
-.c.o:
+%.lo:  ${srcdir}/%.c
 	${LIBTOOL_MODE_COMPILE} ${CC} ${ALL_CFLAGS} -c $<
 
 SHELL = /bin/sh
-LIBTOOL = 
-LIBTOOL_MODE_COMPILE = ${LIBTOOL} 
-LIBTOOL_MODE_INSTALL = ${LIBTOOL} 
-LIBTOOL_MODE_LINK = ${LIBTOOL} 
+LIBTOOL = $(SHELL) $(top_builddir)/libtool
+LIBTOOL_MODE_COMPILE = ${LIBTOOL} --mode=compile --tag=CC
+LIBTOOL_MODE_INSTALL = ${LIBTOOL} --mode=install --tag=CC
+LIBTOOL_MODE_LINK = ${LIBTOOL} --mode=link --tag=CC
 PURIFY = 
 
 MKDEP = ${SHELL} ${top_builddir}/make/mkdep
@@ -380,19 +380,19 @@ FINALBUILDCMD = if [ X"${MKSYMTBL_PROGRAM}" = X -o X"$${MAKE_SYMTABLE:-${ALWAYS_
 		rm -f $@tmp0; \
 		${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${ALL_CFLAGS} ${LDFLAGS} \
 		-o $@tmp0 $${BASEOBJS} $${LIBS0} ${LIBS} || exit 1; \
-		rm -f $@-symtbl.c $@-symtbl.o; \
+		rm -f $@-symtbl.c $@-symtbl.lo; \
 		${MKSYMTBL_PROGRAM} ${top_srcdir}/util/mksymtbl.pl \
 		-o $@-symtbl.c $@tmp0 || exit 1; \
-		$(MAKE) $@-symtbl.o || exit 1; \
+		$(MAKE) $@-symtbl.lo || exit 1; \
 		rm -f $@tmp1; \
 		${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${ALL_CFLAGS} ${LDFLAGS} \
-		-o $@tmp1 $${BASEOBJS} $@-symtbl.o $${LIBS0} ${NOSYMLIBS} || exit 1; \
-		rm -f $@-symtbl.c $@-symtbl.o; \
+		-o $@tmp1 $${BASEOBJS} $@-symtbl.lo $${LIBS0} ${NOSYMLIBS} || exit 1; \
+		rm -f $@-symtbl.c $@-symtbl.lo; \
 		${MKSYMTBL_PROGRAM} ${top_srcdir}/util/mksymtbl.pl \
 		-o $@-symtbl.c $@tmp1 || exit 1; \
-		$(MAKE) $@-symtbl.o || exit 1; \
+		$(MAKE) $@-symtbl.lo || exit 1; \
 		${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${ALL_CFLAGS} ${LDFLAGS} \
-		-o $@tmp2 $${BASEOBJS} $@-symtbl.o $${LIBS0} ${NOSYMLIBS}; \
+		-o $@tmp2 $${BASEOBJS} $@-symtbl.lo $${LIBS0} ${NOSYMLIBS}; \
 		${MKSYMTBL_PROGRAM} ${top_srcdir}/util/mksymtbl.pl \
 		-o $@-symtbl2.c $@tmp2; \
 		count=0; \
@@ -400,12 +400,12 @@ FINALBUILDCMD = if [ X"${MKSYMTBL_PROGRAM}" = X -o X"$${MAKE_SYMTABLE:-${ALWAYS_
 		do \
 			count=`expr $$count + 1` ; \
 			test $$count = 42 && exit 1 ; \
-			rm -f $@-symtbl.c $@-symtbl.o; \
+			rm -f $@-symtbl.c $@-symtbl.lo; \
 			${MKSYMTBL_PROGRAM} ${top_srcdir}/util/mksymtbl.pl \
 			-o $@-symtbl.c $@tmp2 || exit 1; \
-			$(MAKE) $@-symtbl.o || exit 1; \
+			$(MAKE) $@-symtbl.lo || exit 1; \
 			${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${ALL_CFLAGS} \
-			${LDFLAGS} -o $@tmp2 $${BASEOBJS} $@-symtbl.o \
+			${LDFLAGS} -o $@tmp2 $${BASEOBJS} $@-symtbl.lo \
 			$${LIBS0} ${NOSYMLIBS}; \
 			${MKSYMTBL_PROGRAM} ${top_srcdir}/util/mksymtbl.pl \
 			-o $@-symtbl2.c $@tmp2; \
@@ -418,7 +418,7 @@ cleandir: distclean
 superclean: maintainer-clean
 
 clean distclean maintainer-clean::
-	rm -f *.o *.o *.lo *.la core *.core *-symtbl.c *tmp0 *tmp1 *tmp2
+	rm -f *.lo *.o *.lo *.la core *.core *-symtbl.c *tmp0 *tmp1 *tmp2
 	rm -rf .depend .libs
 
 distclean maintainer-clean::
@@ -499,7 +499,7 @@ W3M =			w3m
 ###
 ### Script language program used to create internal symbol tables
 ###
-MKSYMTBL_PROGRAM =	/usr/bin/perl
+MKSYMTBL_PROGRAM =	
 
 ###
 ### Switch to create internal symbol table selectively
@@ -555,8 +555,8 @@ BTTEST_CFLAGS =	${EXT_CFLAGS} ${ALL_CPPFLAGS} -g ${ALWAYS_WARNINGS} \
 
 all_tests: ${XTARGETS}
 
-adb_test: adb_test.o ${ISCDEPLIBS} ${DNSDEPLIBS}
-	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ adb_test.o \
+adb_test: adb_test.lo ${ISCDEPLIBS} ${DNSDEPLIBS}
+	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ adb_test.lo \
 		${DNSLIBS} ${ISCLIBS} ${LIBS}
 
 backtrace_test_nosymtbl: backtrace_test.c ${ISCDEPLIBS}
@@ -585,144 +585,144 @@ backtrace_test: backtrace_test_nosymtbl
 	-o $@ backtrace_test.c symtbl.c ${ISCNOSYMLIBS} ${LIBS}
 	rm -f symtbl.c
 
-nsecify: nsecify.o ${ISCDEPLIBS} ${DNSDEPLIBS}
-	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ nsecify.o \
+nsecify: nsecify.lo ${ISCDEPLIBS} ${DNSDEPLIBS}
+	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ nsecify.lo \
 		${DNSLIBS} ${ISCLIBS} ${LIBS}
 
-byaddr_test: byaddr_test.o ${ISCDEPLIBS} ${DNSDEPLIBS}
-	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ byaddr_test.o \
+byaddr_test: byaddr_test.lo ${ISCDEPLIBS} ${DNSDEPLIBS}
+	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ byaddr_test.lo \
 		${DNSLIBS} ${ISCLIBS} ${LIBS}
 
-byname_test: byname_test.o ${ISCDEPLIBS} ${DNSDEPLIBS}
-	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ byname_test.o \
+byname_test: byname_test.lo ${ISCDEPLIBS} ${DNSDEPLIBS}
+	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ byname_test.lo \
 		${DNSLIBS} ${ISCLIBS} ${LIBS}
 
-lex_test: lex_test.o ${ISCDEPLIBS}
-	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ lex_test.o \
+lex_test: lex_test.lo ${ISCDEPLIBS}
+	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ lex_test.lo \
 		${ISCLIBS} ${LIBS}
 
-lfsr_test: lfsr_test.o ${ISCDEPLIBS}
-	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ lfsr_test.o \
+lfsr_test: lfsr_test.lo ${ISCDEPLIBS}
+	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ lfsr_test.lo \
 		${ISCLIBS} ${LIBS}
 
-log_test: log_test.o ${ISCDEPLIBS} ${DNSDEPLIBS}
-	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ log_test.o \
+log_test: log_test.lo ${ISCDEPLIBS} ${DNSDEPLIBS}
+	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ log_test.lo \
 		${DNSLIBS} ${ISCLIBS} ${LIBS}
 
-name_test: name_test.o ${ISCDEPLIBS} ${DNSDEPLIBS}
-	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ name_test.o \
+name_test: name_test.lo ${ISCDEPLIBS} ${DNSDEPLIBS}
+	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ name_test.lo \
 		${DNSLIBS} ${ISCLIBS} ${LIBS}
 
-hash_test: hash_test.o ${ISCDEPLIBS}
-	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ hash_test.o \
+hash_test: hash_test.lo ${ISCDEPLIBS}
+	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ hash_test.lo \
 		${ISCLIBS} ${LIBS}
 
-entropy_test: entropy_test.o ${ISCDEPLIBS}
-	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ entropy_test.o \
+entropy_test: entropy_test.lo ${ISCDEPLIBS}
+	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ entropy_test.lo \
 		${ISCLIBS} ${LIBS}
 
-entropy2_test: entropy2_test.o ${ISCDEPLIBS}
-	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ entropy2_test.o \
+entropy2_test: entropy2_test.lo ${ISCDEPLIBS}
+	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ entropy2_test.lo \
 		${ISCLIBS} ${LIBS}
 
-sock_test: sock_test.o ${ISCDEPLIBS}
-	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ sock_test.o \
+sock_test: sock_test.lo ${ISCDEPLIBS}
+	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ sock_test.lo \
 		${ISCLIBS} ${LIBS}
 
-sym_test: sym_test.o ${ISCDEPLIBS}
-	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ sym_test.o \
+sym_test: sym_test.lo ${ISCDEPLIBS}
+	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ sym_test.lo \
 		${ISCLIBS} ${LIBS}
 
-task_test: task_test.o ${ISCDEPLIBS}
-	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ task_test.o \
+task_test: task_test.lo ${ISCDEPLIBS}
+	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ task_test.lo \
 		${ISCLIBS} ${LIBS}
 
-shutdown_test: shutdown_test.o ${ISCDEPLIBS}
-	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ shutdown_test.o \
+shutdown_test: shutdown_test.lo ${ISCDEPLIBS}
+	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ shutdown_test.lo \
 		${ISCLIBS} ${LIBS}
 
-timer_test: timer_test.o ${ISCDEPLIBS}
-	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ timer_test.o \
+timer_test: timer_test.lo ${ISCDEPLIBS}
+	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ timer_test.lo \
 		${ISCLIBS} ${LIBS}
 
-ratelimiter_test: ratelimiter_test.o ${ISCDEPLIBS} ${DNSDEPLIBS}
-	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ ratelimiter_test.o \
+ratelimiter_test: ratelimiter_test.lo ${ISCDEPLIBS} ${DNSDEPLIBS}
+	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ ratelimiter_test.lo \
 		${DNSLIBS} ${ISCLIBS} ${LIBS}
 
-rbt_test: rbt_test.o ${ISCDEPLIBS} ${DNSDEPLIBS}
-	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ rbt_test.o \
+rbt_test: rbt_test.lo ${ISCDEPLIBS} ${DNSDEPLIBS}
+	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ rbt_test.lo \
 		${DNSLIBS} ${ISCLIBS} ${LIBS}
 
-rdata_test: rdata_test.o ${ISCDEPLIBS} ${DNSDEPLIBS}
-	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ rdata_test.o \
+rdata_test: rdata_test.lo ${ISCDEPLIBS} ${DNSDEPLIBS}
+	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ rdata_test.lo \
 		${DNSLIBS} ${ISCLIBS} ${LIBS}
 
-rwlock_test: rwlock_test.o ${ISCDEPLIBS}
-	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ rwlock_test.o \
+rwlock_test: rwlock_test.lo ${ISCDEPLIBS}
+	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ rwlock_test.lo \
 		${ISCLIBS} ${LIBS}
 
-wire_test: wire_test.o printmsg.o ${ISCDEPLIBS} ${DNSDEPLIBS}
-	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ wire_test.o printmsg.o \
+wire_test: wire_test.lo printmsg.lo ${ISCDEPLIBS} ${DNSDEPLIBS}
+	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ wire_test.lo printmsg.lo \
 		${DNSLIBS} ${ISCLIBS} ${LIBS}
 
-master_test: master_test.o ${ISCDEPLIBS} ${DNSDEPLIBS}
-	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ master_test.o \
+master_test: master_test.lo ${ISCDEPLIBS} ${DNSDEPLIBS}
+	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ master_test.lo \
 		${DNSLIBS} ${ISCLIBS} ${LIBS}
 
-db_test: db_test.o ${ISCDEPLIBS} ${DNSDEPLIBS}
-	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ db_test.o \
+db_test: db_test.lo ${ISCDEPLIBS} ${DNSDEPLIBS}
+	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ db_test.lo \
 		${DNSLIBS} ${ISCLIBS} ${LIBS}
 
-compress_test: compress_test.o ${ISCDEPLIBS} ${DNSDEPLIBS}
-	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ compress_test.o \
+compress_test: compress_test.lo ${ISCDEPLIBS} ${DNSDEPLIBS}
+	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ compress_test.lo \
 		${DNSLIBS} ${ISCLIBS} ${LIBS}
 
-mempool_test: mempool_test.o ${ISCDEPLIBS}
-	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ mempool_test.o \
+mempool_test: mempool_test.lo ${ISCDEPLIBS}
+	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ mempool_test.lo \
 		${ISCLIBS} ${LIBS}
 
-serial_test: serial_test.o ${ISCDEPLIBS}
-	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ serial_test.o \
+serial_test: serial_test.lo ${ISCDEPLIBS}
+	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ serial_test.lo \
 		${ISCLIBS} ${LIBS}
 
-zone_test: zone_test.o ${ISCDEPLIBS} ${DNSDEPLIBS}
-	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ zone_test.o \
+zone_test: zone_test.lo ${ISCDEPLIBS} ${DNSDEPLIBS}
+	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ zone_test.lo \
 		${DNSLIBS} ${ISCLIBS} ${LIBS}
 
-fsaccess_test: fsaccess_test.o ${ISCDEPLIBS}
-	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ fsaccess_test.o \
+fsaccess_test: fsaccess_test.lo ${ISCDEPLIBS}
+	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ fsaccess_test.lo \
 		${ISCLIBS} ${LIBS}
 
-inter_test: inter_test.o ${ISCDEPLIBS}
-	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ inter_test.o \
+inter_test: inter_test.lo ${ISCDEPLIBS}
+	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ inter_test.lo \
 		${ISCLIBS} ${LIBS}
 
-keyboard_test: keyboard_test.o ${ISCDEPLIBS}
-	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ keyboard_test.o \
+keyboard_test: keyboard_test.lo ${ISCDEPLIBS}
+	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ keyboard_test.lo \
 		${ISCLIBS} ${LIBS}
 
-lwresconf_test: lwresconf_test.o ${ISCDEPLIBS} ${LWRESDEPLIBS}
-	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ lwresconf_test.o \
+lwresconf_test: lwresconf_test.lo ${ISCDEPLIBS} ${LWRESDEPLIBS}
+	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ lwresconf_test.lo \
 		${LWRESLIBS} ${ISCLIBS} ${LIBS}
 
-lwres_test: lwres_test.o ${ISCDEPLIBS} ${LWRESDEPLIBS}
-	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ lwres_test.o \
+lwres_test: lwres_test.lo ${ISCDEPLIBS} ${LWRESDEPLIBS}
+	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ lwres_test.lo \
 		${LWRESLIBS} ${ISCLIBS} ${LIBS}
 
-gxbn_test: gxbn_test.o ${LWRESDEPLIBS}
-	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ gxbn_test.o \
+gxbn_test: gxbn_test.lo ${LWRESDEPLIBS}
+	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ gxbn_test.lo \
 		${LWRESLIBS} ${ISCLIBS} ${LIBS}
 
-gxba_test: gxba_test.o ${LWRESDEPLIBS}
-	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ gxba_test.o \
+gxba_test: gxba_test.lo ${LWRESDEPLIBS}
+	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ gxba_test.lo \
 		${LWRESLIBS} ${ISCLIBS} ${LIBS}
 
-sig0_test: sig0_test.o ${ISCDEPLIBS} ${DNSDEPLIBS}
-	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ sig0_test.o \
+sig0_test: sig0_test.lo ${ISCDEPLIBS} ${DNSDEPLIBS}
+	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ sig0_test.lo \
 		${DNSLIBS} ${ISCLIBS} ${LIBS}
 
-cfg_test: cfg_test.o ${ISCCFGDEPLIBS} ${ISCDEPLIBS}
-	${LIBTOOL_MODE_LINK} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ cfg_test.o \
+cfg_test: cfg_test.lo ${ISCCFGDEPLIBS} ${ISCDEPLIBS}
+	${LIBTOOL_MODE_LINK} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ cfg_test.lo \
 		${ISCCFGLIBS} ${DNSLIBS} ${ISCLIBS} ${LIBS}
 
 distclean::

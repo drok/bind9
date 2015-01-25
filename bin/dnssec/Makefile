@@ -48,7 +48,7 @@ ISC_INCLUDES = -I/home/radu/proj/bind9/lib/isc/include \
 	-I${top_srcdir}/lib/isc \
 	-I${top_srcdir}/lib/isc/include \
 	-I${top_srcdir}/lib/isc/unix/include \
-	-I${top_srcdir}/lib/isc/nothreads/include \
+	-I${top_srcdir}/lib/isc/pthreads/include \
 	-I${top_srcdir}/lib/isc/x86_32/include
 
 ISCCC_INCLUDES = -I/home/radu/proj/bind9/lib/isccc/include \
@@ -75,18 +75,18 @@ CINCLUDES =	${DNS_INCLUDES} ${ISC_INCLUDES}
 CDEFINES =	-DVERSION=\"${VERSION}\" 
 CWARNINGS =
 
-DNSLIBS =	../../lib/dns/libdns.a  -lgssapi_krb5 -lcrypto
-ISCLIBS =	../../lib/isc/libisc.a
-ISCNOSYMLIBS =	../../lib/isc/libisc-nosymtbl.a
+DNSLIBS =	../../lib/dns/libdns.la  -lgssapi_krb5 -lcrypto
+ISCLIBS =	../../lib/isc/libisc.la
+ISCNOSYMLIBS =	../../lib/isc/libisc-nosymtbl.la
 
-DNSDEPLIBS =	../../lib/dns/libdns.a
-ISCDEPLIBS =	../../lib/isc/libisc.a
+DNSDEPLIBS =	../../lib/dns/libdns.la
+ISCDEPLIBS =	../../lib/isc/libisc.la
 
 DEPLIBS =	${DNSDEPLIBS} ${ISCDEPLIBS}
 
-LIBS =		${DNSLIBS} ${ISCLIBS} -ldl -lcap  -lxml2 -lz -lm
+LIBS =		${DNSLIBS} ${ISCLIBS} -ldl -lcap -lpthread  -lxml2 -lz -lm
 
-NOSYMLIBS =	${DNSLIBS} ${ISCNOSYMLIBS} -ldl -lcap  -lxml2 -lz -lm
+NOSYMLIBS =	${DNSLIBS} ${ISCNOSYMLIBS} -ldl -lcap -lpthread  -lxml2 -lz -lm
 
 # Alphabetically
 TARGETS =	dnssec-keygen dnssec-signzone \
@@ -94,7 +94,7 @@ TARGETS =	dnssec-keygen dnssec-signzone \
 		dnssec-revoke dnssec-settime \
 		dnssec-verify dnssec-importkey
 
-OBJS =		dnssectool.o
+OBJS =		dnssectool.lo
 
 SRCS =		dnssec-dsfromkey.c dnssec-keyfromlabel.c dnssec-keygen.c \
 		dnssec-revoke.c dnssec-settime.c dnssec-signzone.c \
@@ -138,18 +138,18 @@ MANOBJS =	${MANPAGES} ${HTMLPAGES}
 ### Note: paths that vary by Makefile MUST NOT be listed
 ### here, or they won't get expanded correctly.
 
-prefix =	/usr/local
-exec_prefix =	${prefix}
-bindir =	${exec_prefix}/bin
-sbindir =	${exec_prefix}/sbin
-includedir =	${prefix}/include
-libdir =	${exec_prefix}/lib
+prefix =	/usr
+exec_prefix =	/usr
+bindir =	/usr/bin
+sbindir =	/usr/sbin
+includedir =	/usr/include/bind9
+libdir =	/usr/lib
 sysconfdir =	/etc
 localstatedir =	/var
-mandir =	${datarootdir}/man
+mandir =	/usr/share/man
 datarootdir =   ${prefix}/share
-export_libdir =	${exec_prefix}/lib/bind9/
-export_includedir = ${prefix}/include/bind9/
+export_libdir =	/usr/lib
+export_includedir = /usr/include
 
 DESTDIR =
 
@@ -225,21 +225,21 @@ install clean distclean maintainer-clean doc docclean man manclean::
 CC = 		/usr/bin/gcc
 CFLAGS =	-g3 -gdwarf-2 -I/usr/include/libxml2
 LDFLAGS =	
-STD_CINCLUDES =	
-STD_CDEFINES =	 -D_GNU_SOURCE
+STD_CINCLUDES =	 -I/home/radu/proj/bind9/unit/atf/include
+STD_CDEFINES =	 -DISC_LIST_CHECKINIT=1 -D_GNU_SOURCE
 STD_CWARNINGS =	 -W -Wall -Wmissing-prototypes -Wcast-qual -Wwrite-strings -Wformat -Wpointer-arith -fno-strict-aliasing -fno-delete-null-pointer-checks
 
 BUILD_CC = /usr/bin/gcc
 BUILD_CFLAGS = -g3 -gdwarf-2 -I/usr/include/libxml2
 BUILD_CPPFLAGS =  -D_GNU_SOURCE 
 BUILD_LDFLAGS = 
-BUILD_LIBS = -ldl -lcap  -lxml2 -lz -lm
+BUILD_LIBS = -ldl -lcap -lpthread  -lxml2 -lz -lm
 
 .SUFFIXES:
-.SUFFIXES: .c .o
+.SUFFIXES: .c .lo
 
 ALWAYS_INCLUDES = -I${top_builddir}
-ALWAYS_DEFINES = 
+ALWAYS_DEFINES = -D_REENTRANT
 ALWAYS_WARNINGS =
 
 ALL_CPPFLAGS = \
@@ -249,14 +249,14 @@ ALL_CPPFLAGS = \
 ALL_CFLAGS = ${EXT_CFLAGS} ${ALL_CPPFLAGS} ${CFLAGS} \
 	${ALWAYS_WARNINGS} ${STD_CWARNINGS} ${CWARNINGS}
 
-.c.o:
+%.lo:  ${srcdir}/%.c
 	${LIBTOOL_MODE_COMPILE} ${CC} ${ALL_CFLAGS} -c $<
 
 SHELL = /bin/sh
-LIBTOOL = 
-LIBTOOL_MODE_COMPILE = ${LIBTOOL} 
-LIBTOOL_MODE_INSTALL = ${LIBTOOL} 
-LIBTOOL_MODE_LINK = ${LIBTOOL} 
+LIBTOOL = $(SHELL) $(top_builddir)/libtool
+LIBTOOL_MODE_COMPILE = ${LIBTOOL} --mode=compile --tag=CC
+LIBTOOL_MODE_INSTALL = ${LIBTOOL} --mode=install --tag=CC
+LIBTOOL_MODE_LINK = ${LIBTOOL} --mode=link --tag=CC
 PURIFY = 
 
 MKDEP = ${SHELL} ${top_builddir}/make/mkdep
@@ -312,19 +312,19 @@ FINALBUILDCMD = if [ X"${MKSYMTBL_PROGRAM}" = X -o X"$${MAKE_SYMTABLE:-${ALWAYS_
 		rm -f $@tmp0; \
 		${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${ALL_CFLAGS} ${LDFLAGS} \
 		-o $@tmp0 $${BASEOBJS} $${LIBS0} ${LIBS} || exit 1; \
-		rm -f $@-symtbl.c $@-symtbl.o; \
+		rm -f $@-symtbl.c $@-symtbl.lo; \
 		${MKSYMTBL_PROGRAM} ${top_srcdir}/util/mksymtbl.pl \
 		-o $@-symtbl.c $@tmp0 || exit 1; \
-		$(MAKE) $@-symtbl.o || exit 1; \
+		$(MAKE) $@-symtbl.lo || exit 1; \
 		rm -f $@tmp1; \
 		${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${ALL_CFLAGS} ${LDFLAGS} \
-		-o $@tmp1 $${BASEOBJS} $@-symtbl.o $${LIBS0} ${NOSYMLIBS} || exit 1; \
-		rm -f $@-symtbl.c $@-symtbl.o; \
+		-o $@tmp1 $${BASEOBJS} $@-symtbl.lo $${LIBS0} ${NOSYMLIBS} || exit 1; \
+		rm -f $@-symtbl.c $@-symtbl.lo; \
 		${MKSYMTBL_PROGRAM} ${top_srcdir}/util/mksymtbl.pl \
 		-o $@-symtbl.c $@tmp1 || exit 1; \
-		$(MAKE) $@-symtbl.o || exit 1; \
+		$(MAKE) $@-symtbl.lo || exit 1; \
 		${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${ALL_CFLAGS} ${LDFLAGS} \
-		-o $@tmp2 $${BASEOBJS} $@-symtbl.o $${LIBS0} ${NOSYMLIBS}; \
+		-o $@tmp2 $${BASEOBJS} $@-symtbl.lo $${LIBS0} ${NOSYMLIBS}; \
 		${MKSYMTBL_PROGRAM} ${top_srcdir}/util/mksymtbl.pl \
 		-o $@-symtbl2.c $@tmp2; \
 		count=0; \
@@ -332,12 +332,12 @@ FINALBUILDCMD = if [ X"${MKSYMTBL_PROGRAM}" = X -o X"$${MAKE_SYMTABLE:-${ALWAYS_
 		do \
 			count=`expr $$count + 1` ; \
 			test $$count = 42 && exit 1 ; \
-			rm -f $@-symtbl.c $@-symtbl.o; \
+			rm -f $@-symtbl.c $@-symtbl.lo; \
 			${MKSYMTBL_PROGRAM} ${top_srcdir}/util/mksymtbl.pl \
 			-o $@-symtbl.c $@tmp2 || exit 1; \
-			$(MAKE) $@-symtbl.o || exit 1; \
+			$(MAKE) $@-symtbl.lo || exit 1; \
 			${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${ALL_CFLAGS} \
-			${LDFLAGS} -o $@tmp2 $${BASEOBJS} $@-symtbl.o \
+			${LDFLAGS} -o $@tmp2 $${BASEOBJS} $@-symtbl.lo \
 			$${LIBS0} ${NOSYMLIBS}; \
 			${MKSYMTBL_PROGRAM} ${top_srcdir}/util/mksymtbl.pl \
 			-o $@-symtbl2.c $@tmp2; \
@@ -350,7 +350,7 @@ cleandir: distclean
 superclean: maintainer-clean
 
 clean distclean maintainer-clean::
-	rm -f *.o *.o *.lo *.la core *.core *-symtbl.c *tmp0 *tmp1 *tmp2
+	rm -f *.lo *.o *.lo *.la core *.core *-symtbl.c *tmp0 *tmp1 *tmp2
 	rm -rf .depend .libs
 
 distclean maintainer-clean::
@@ -431,7 +431,7 @@ W3M =			w3m
 ###
 ### Script language program used to create internal symbol tables
 ###
-MKSYMTBL_PROGRAM =	/usr/bin/perl
+MKSYMTBL_PROGRAM =	
 
 ###
 ### Switch to create internal symbol table selectively
@@ -481,45 +481,45 @@ ALWAYS_MAKE_SYMTABLE =
 	chmod +x $@
 
 
-dnssec-dsfromkey: dnssec-dsfromkey.o ${OBJS} ${DEPLIBS}
-	export BASEOBJS="dnssec-dsfromkey.o ${OBJS}"; \
+dnssec-dsfromkey: dnssec-dsfromkey.lo ${OBJS} ${DEPLIBS}
+	export BASEOBJS="dnssec-dsfromkey.lo ${OBJS}"; \
 	${FINALBUILDCMD}
 
-dnssec-keyfromlabel: dnssec-keyfromlabel.o ${OBJS} ${DEPLIBS}
-	export BASEOBJS="dnssec-keyfromlabel.o ${OBJS}"; \
+dnssec-keyfromlabel: dnssec-keyfromlabel.lo ${OBJS} ${DEPLIBS}
+	export BASEOBJS="dnssec-keyfromlabel.lo ${OBJS}"; \
 	${FINALBUILDCMD}
 
-dnssec-keygen: dnssec-keygen.o ${OBJS} ${DEPLIBS}
-	export BASEOBJS="dnssec-keygen.o ${OBJS}"; \
+dnssec-keygen: dnssec-keygen.lo ${OBJS} ${DEPLIBS}
+	export BASEOBJS="dnssec-keygen.lo ${OBJS}"; \
 	${FINALBUILDCMD}
 
-dnssec-signzone.o: dnssec-signzone.c
+dnssec-signzone.lo: dnssec-signzone.c
 	${LIBTOOL_MODE_COMPILE} ${CC} ${ALL_CFLAGS} -DVERSION=\"${VERSION}\" \
 		-c ${srcdir}/dnssec-signzone.c
 
-dnssec-signzone: dnssec-signzone.o ${OBJS} ${DEPLIBS}
-	export BASEOBJS="dnssec-signzone.o ${OBJS}"; \
+dnssec-signzone: dnssec-signzone.lo ${OBJS} ${DEPLIBS}
+	export BASEOBJS="dnssec-signzone.lo ${OBJS}"; \
 	${FINALBUILDCMD}
 
-dnssec-verify.o: dnssec-verify.c
+dnssec-verify.lo: dnssec-verify.c
 	${LIBTOOL_MODE_COMPILE} ${CC} ${ALL_CFLAGS} -DVERSION=\"${VERSION}\" \
 		-c ${srcdir}/dnssec-verify.c
 
-dnssec-verify: dnssec-verify.o ${OBJS} ${DEPLIBS}
-	export BASEOBJS="dnssec-verify.o ${OBJS}"; \
+dnssec-verify: dnssec-verify.lo ${OBJS} ${DEPLIBS}
+	export BASEOBJS="dnssec-verify.lo ${OBJS}"; \
 	${FINALBUILDCMD}
 
-dnssec-revoke: dnssec-revoke.o ${OBJS} ${DEPLIBS}
+dnssec-revoke: dnssec-revoke.lo ${OBJS} ${DEPLIBS}
 	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ \
-	dnssec-revoke.o ${OBJS} ${LIBS}
+	dnssec-revoke.lo ${OBJS} ${LIBS}
 
-dnssec-settime: dnssec-settime.o ${OBJS} ${DEPLIBS}
+dnssec-settime: dnssec-settime.lo ${OBJS} ${DEPLIBS}
 	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ \
-	dnssec-settime.o ${OBJS} ${LIBS}
+	dnssec-settime.lo ${OBJS} ${LIBS}
 
-dnssec-importkey: dnssec-importkey.o ${OBJS} ${DEPLIBS}
+dnssec-importkey: dnssec-importkey.lo ${OBJS} ${DEPLIBS}
 	${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${CFLAGS} ${LDFLAGS} -o $@ \
-	dnssec-importkey.o ${OBJS} ${LIBS}
+	dnssec-importkey.lo ${OBJS} ${LIBS}
 
 doc man:: ${MANOBJS}
 

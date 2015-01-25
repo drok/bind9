@@ -118,7 +118,7 @@
 #define NOQNAME(r)		(((r)->attributes & \
 				  DNS_RDATASETATTR_NOQNAME) != 0)
 
-#if 0
+#if 1
 #define CTRACE(m)       isc_log_write(ns_g_lctx, \
 				      NS_LOGCATEGORY_CLIENT, \
 				      NS_LOGMODULE_QUERY, \
@@ -1217,6 +1217,10 @@ query_addadditional(void *arg, dns_name_t *name, dns_rdatatype_t qtype) {
 		return (ISC_R_SUCCESS);
 
 	CTRACE("query_addadditional");
+	if (WANTDNSSEC(client) && dns_rdatatype_isdnssec(qtype)) {
+		CTRACE("query_addadditional: wantdnssec");
+	}
+		
 
 	/*
 	 * Initialization.
@@ -1285,6 +1289,15 @@ query_addadditional(void *arg, dns_name_t *name, dns_rdatatype_t qtype) {
 				client->now, &node, fname, &cm, &ci,
 				rdataset, sigrdataset);
 	if (result == ISC_R_SUCCESS) {
+		if (sigrdataset != NULL) {
+			CTRACE("query_addadditional: have sigrrdataset");
+			if (dns_rdataset_isassociated(sigrdataset)) {
+				CTRACE("query_addadditional: have associated sigrrdataset");
+			}
+			if (dns_db_issecure(db)) {
+				CTRACE("query_addadditional: db is secure");
+			}
+		}
 		if (sigrdataset != NULL && !dns_db_issecure(db) &&
 		    dns_rdataset_isassociated(sigrdataset))
 			dns_rdataset_disassociate(sigrdataset);
@@ -7724,13 +7737,15 @@ ns_query_start(ns_client_t *client) {
 		}
 	}
 
+#if 1
+	/* SAY WHAT? don't DNSKEYs and DS need to be authenticated too? */
 	/*
 	 * Turn on minimal response for DNSKEY and DS queries.
 	 */
 	if (qtype == dns_rdatatype_dnskey || qtype == dns_rdatatype_ds)
 		client->query.attributes |= (NS_QUERYATTR_NOAUTHORITY |
 					     NS_QUERYATTR_NOADDITIONAL);
-
+#endif
 	/*
 	 * Turn on minimal responses for EDNS/UDP bufsize 512 queries.
 	 */

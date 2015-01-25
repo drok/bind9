@@ -719,6 +719,43 @@ t4(void) {
 		require_threads();
 }
 
+#define	T6_SECONDS	0
+#define	T6_NANOSECONDS	0
+
+static const char *a6 =
+	"A call to isc_timer_reset() with a time of NOW should call the action immediately, and not hang forever.";
+
+static void
+t6(void) {
+	int		result;
+	isc_time_t	expires;
+	isc_interval_t	interval;
+
+	t_assert("isc_timer_reset", 6, T_REQUIRED, "%s", a6);
+
+	if (threaded) {
+		Tx_nfails = 0;
+		Tx_nprobs = 0;
+		Tx_nevents = 1;
+		Tx_seconds = T6_SECONDS;
+		Tx_nanoseconds = T6_NANOSECONDS;
+
+		isc_interval_set(&interval, T6_SECONDS, T6_NANOSECONDS);
+		isc_time_settoepoch(&expires);
+		t_timers_x(isc_timertype_ticker, &expires, &interval, t4_te);
+
+		result = T_UNRESOLVED;
+
+		if ((Tx_nfails == 0) && (Tx_nprobs == 0))
+			result = T_PASS;
+		else if (Tx_nfails)
+			result = T_FAIL;
+
+		t_result(result);
+	} else
+		require_threads();
+}
+
 #define	T5_NTICKS	4
 #define	T5_SECONDS	3
 
@@ -1121,6 +1158,7 @@ testspec_t	T_testlist[] = {
 	{	(PFV) t3,		"timer_create"		},
 	{	(PFV) t4,		"timer_reset"		},
 	{	(PFV) t5,		"timer_reset"		},
+	{	(PFV) t6,		"timer_reset"		},
 	{	(PFV) NULL,		NULL			}
 };
 
