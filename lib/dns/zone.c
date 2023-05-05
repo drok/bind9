@@ -879,9 +879,11 @@ dns_zone_create(dns_zone_t **zonep, isc_mem_t *mctx) {
 	zone->masterfile = NULL;
 	zone->masterformat = dns_masterformat_none;
 isc_log_write(dns_lctx, DNS_LOGCATEGORY_GENERAL, DNS_LOGMODULE_DNSSEC, ISC_LOG_WARNING, "----------- %s:%u:%s: zone=%p", __FILE__, __LINE__, __FUNCTION__, zone);
+#if HAVE_VALGRIND
 #ifdef USE_VALGRIND_MEMCHECK
         // Debug what  sets this to null, and why it's not used to load keys
         VALGRIND_MAKE_MEM_NOACCESS(zone->keydirectory, sizeof(zone->keydirectory));
+#endif
 #endif
 	UNCONFIGURED_PTR(zone->keydirectory);
 	zone->journalsize = -1;

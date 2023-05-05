@@ -102,6 +102,7 @@ dns_ncache_add(dns_message_t *message, dns_db_t *cache, dns_dbnode_t *node,
 	       dns_rdatatype_t covers, isc_stdtime_t now, dns_ttl_t maxttl,
 	       dns_rdataset_t *addedrdataset)
 {
+	fprintf("%s:%u ... message=%p\n", __FUNCTION__, __LINE__, message);
 	return (addoptout(message, cache, node, covers, now, maxttl,
 			  ISC_FALSE, ISC_FALSE, addedrdataset));
 }

@@ -135,18 +135,18 @@ install clean distclean maintainer-clean doc docclean man manclean::
 ### User may define externally
 ###     EXT_CFLAGS
 
-CC = 		/usr/bin/gcc
-CFLAGS =	-g3 -gdwarf-2 -I/usr/include/libxml2
+CC = 		gcc
+CFLAGS =	-g -O2
 LDFLAGS =	
 STD_CINCLUDES =	
 STD_CDEFINES =	 -D_GNU_SOURCE
 STD_CWARNINGS =	 -W -Wall -Wmissing-prototypes -Wcast-qual -Wwrite-strings -Wformat -Wpointer-arith -fno-strict-aliasing -fno-delete-null-pointer-checks
 
-BUILD_CC = /usr/bin/gcc
-BUILD_CFLAGS = -g3 -gdwarf-2 -I/usr/include/libxml2
+BUILD_CC = gcc
+BUILD_CFLAGS = -g -O2
 BUILD_CPPFLAGS =  -D_GNU_SOURCE 
 BUILD_LDFLAGS = 
-BUILD_LIBS = -ldl -lcap  -lxml2 -lz -lm
+BUILD_LIBS = -ldl -lcap 
 
 .SUFFIXES:
 .SUFFIXES: .c .o
@@ -335,7 +335,7 @@ INSTALL_DATA =		${INSTALL} -m 644
 ### not to exist when not generating documentation.
 ###
 
-XSLTPROC =		/usr/bin/xsltproc --novalid --xinclude --nonet
+XSLTPROC =		xsltproc --novalid --xinclude --nonet
 PERL =			/usr/bin/perl
 LATEX =			/usr/bin/latex
 PDFLATEX =		/usr/bin/pdflatex

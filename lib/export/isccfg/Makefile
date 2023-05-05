@@ -57,7 +57,7 @@ ISC_INCLUDES = -I/home/radu/proj/bind9/lib/isc/include \
 	-I${top_srcdir}/lib/isc \
 	-I${top_srcdir}/lib/isc/include \
 	-I${top_srcdir}/lib/isc/unix/include \
-	-I${top_srcdir}/lib/isc/pthreads/include \
+	-I${top_srcdir}/lib/isc/nothreads/include \
 	-I${top_srcdir}/lib/isc/x86_32/include
 
 ISCCC_INCLUDES = -I/home/radu/proj/bind9/lib/isccc/include \
@@ -85,18 +85,18 @@ CINCLUDES =	-I. ${DNS_INCLUDES} -I${export_srcdir}/isc/include \
 CDEFINES =
 CWARNINGS =
 
-ISCLIBS =	../isc/libisc-export.la
-DNSLIBS =	../dns/libdns-export.la  -lgssapi_krb5 -lcrypto
+ISCLIBS =	../isc/libisc-export.a
+DNSLIBS =	../dns/libdns-export.a  -lgssapi_krb5 -lcrypto
 
-ISCDEPLIBS =	../../lib/isc/libisc.la
-ISCCFGDEPLIBS =	libisccfg-export.la
+ISCDEPLIBS =	../../lib/isc/libisc.a
+ISCCFGDEPLIBS =	libisccfg-export.a
 
-LIBS =		-ldl -lcap -lpthread  -lxml2 -lz -lm
+LIBS =		-ldl -lcap 
 
 SUBDIRS =	include
 
 # Alphabetically
-OBJS =		dnsconf.lo log.lo parser.lo version.lo
+OBJS =		dnsconf.o log.o parser.o version.o
 
 # Alphabetically
 SRCS =		dnsconf.c log.c parser.c version.c
@@ -130,18 +130,18 @@ TARGETS = 	timestamp
 ### Note: paths that vary by Makefile MUST NOT be listed
 ### here, or they won't get expanded correctly.
 
-prefix =	/usr
-exec_prefix =	/usr
-bindir =	/usr/bin
-sbindir =	/usr/sbin
-includedir =	/usr/include/bind9
-libdir =	/usr/lib
+prefix =	/usr/local
+exec_prefix =	${prefix}
+bindir =	${exec_prefix}/bin
+sbindir =	${exec_prefix}/sbin
+includedir =	${prefix}/include
+libdir =	${exec_prefix}/lib
 sysconfdir =	/etc
 localstatedir =	/var
-mandir =	/usr/share/man
+mandir =	${datarootdir}/man
 datarootdir =   ${prefix}/share
-export_libdir =	/usr/lib
-export_includedir = /usr/include
+export_libdir =	${exec_prefix}/lib/bind9/
+export_includedir = ${prefix}/include/bind9/
 
 DESTDIR =
 
@@ -214,24 +214,24 @@ install clean distclean maintainer-clean doc docclean man manclean::
 ### User may define externally
 ###     EXT_CFLAGS
 
-CC = 		/usr/bin/gcc
-CFLAGS =	-g3 -gdwarf-2 -I/usr/include/libxml2
+CC = 		gcc
+CFLAGS =	-g -O2
 LDFLAGS =	
-STD_CINCLUDES =	 -I/home/radu/proj/bind9/unit/atf/include
-STD_CDEFINES =	 -DISC_LIST_CHECKINIT=1 -D_GNU_SOURCE
+STD_CINCLUDES =	
+STD_CDEFINES =	 -D_GNU_SOURCE
 STD_CWARNINGS =	 -W -Wall -Wmissing-prototypes -Wcast-qual -Wwrite-strings -Wformat -Wpointer-arith -fno-strict-aliasing -fno-delete-null-pointer-checks
 
-BUILD_CC = /usr/bin/gcc
-BUILD_CFLAGS = -g3 -gdwarf-2 -I/usr/include/libxml2
+BUILD_CC = gcc
+BUILD_CFLAGS = -g -O2
 BUILD_CPPFLAGS =  -D_GNU_SOURCE 
 BUILD_LDFLAGS = 
-BUILD_LIBS = -ldl -lcap -lpthread  -lxml2 -lz -lm
+BUILD_LIBS = -ldl -lcap 
 
 .SUFFIXES:
-.SUFFIXES: .c .lo
+.SUFFIXES: .c .o
 
 ALWAYS_INCLUDES = -I${top_builddir}
-ALWAYS_DEFINES = -D_REENTRANT
+ALWAYS_DEFINES = 
 ALWAYS_WARNINGS =
 
 ALL_CPPFLAGS = \
@@ -241,14 +241,14 @@ ALL_CPPFLAGS = \
 ALL_CFLAGS = ${EXT_CFLAGS} ${ALL_CPPFLAGS} ${CFLAGS} \
 	${ALWAYS_WARNINGS} ${STD_CWARNINGS} ${CWARNINGS}
 
-%.lo:  ${srcdir}/%.c
+.c.o:
 	${LIBTOOL_MODE_COMPILE} ${CC} ${ALL_CFLAGS} -c $<
 
 SHELL = /bin/sh
-LIBTOOL = $(SHELL) $(top_builddir)/libtool
-LIBTOOL_MODE_COMPILE = ${LIBTOOL} --mode=compile --tag=CC
-LIBTOOL_MODE_INSTALL = ${LIBTOOL} --mode=install --tag=CC
-LIBTOOL_MODE_LINK = ${LIBTOOL} --mode=link --tag=CC
+LIBTOOL = 
+LIBTOOL_MODE_COMPILE = ${LIBTOOL} 
+LIBTOOL_MODE_INSTALL = ${LIBTOOL} 
+LIBTOOL_MODE_LINK = ${LIBTOOL} 
 PURIFY = 
 
 MKDEP = ${SHELL} ${top_builddir}/make/mkdep
@@ -304,19 +304,19 @@ FINALBUILDCMD = if [ X"${MKSYMTBL_PROGRAM}" = X -o X"$${MAKE_SYMTABLE:-${ALWAYS_
 		rm -f $@tmp0; \
 		${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${ALL_CFLAGS} ${LDFLAGS} \
 		-o $@tmp0 $${BASEOBJS} $${LIBS0} ${LIBS} || exit 1; \
-		rm -f $@-symtbl.c $@-symtbl.lo; \
+		rm -f $@-symtbl.c $@-symtbl.o; \
 		${MKSYMTBL_PROGRAM} ${top_srcdir}/util/mksymtbl.pl \
 		-o $@-symtbl.c $@tmp0 || exit 1; \
-		$(MAKE) $@-symtbl.lo || exit 1; \
+		$(MAKE) $@-symtbl.o || exit 1; \
 		rm -f $@tmp1; \
 		${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${ALL_CFLAGS} ${LDFLAGS} \
-		-o $@tmp1 $${BASEOBJS} $@-symtbl.lo $${LIBS0} ${NOSYMLIBS} || exit 1; \
-		rm -f $@-symtbl.c $@-symtbl.lo; \
+		-o $@tmp1 $${BASEOBJS} $@-symtbl.o $${LIBS0} ${NOSYMLIBS} || exit 1; \
+		rm -f $@-symtbl.c $@-symtbl.o; \
 		${MKSYMTBL_PROGRAM} ${top_srcdir}/util/mksymtbl.pl \
 		-o $@-symtbl.c $@tmp1 || exit 1; \
-		$(MAKE) $@-symtbl.lo || exit 1; \
+		$(MAKE) $@-symtbl.o || exit 1; \
 		${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${ALL_CFLAGS} ${LDFLAGS} \
-		-o $@tmp2 $${BASEOBJS} $@-symtbl.lo $${LIBS0} ${NOSYMLIBS}; \
+		-o $@tmp2 $${BASEOBJS} $@-symtbl.o $${LIBS0} ${NOSYMLIBS}; \
 		${MKSYMTBL_PROGRAM} ${top_srcdir}/util/mksymtbl.pl \
 		-o $@-symtbl2.c $@tmp2; \
 		count=0; \
@@ -324,12 +324,12 @@ FINALBUILDCMD = if [ X"${MKSYMTBL_PROGRAM}" = X -o X"$${MAKE_SYMTABLE:-${ALWAYS_
 		do \
 			count=`expr $$count + 1` ; \
 			test $$count = 42 && exit 1 ; \
-			rm -f $@-symtbl.c $@-symtbl.lo; \
+			rm -f $@-symtbl.c $@-symtbl.o; \
 			${MKSYMTBL_PROGRAM} ${top_srcdir}/util/mksymtbl.pl \
 			-o $@-symtbl.c $@tmp2 || exit 1; \
-			$(MAKE) $@-symtbl.lo || exit 1; \
+			$(MAKE) $@-symtbl.o || exit 1; \
 			${LIBTOOL_MODE_LINK} ${PURIFY} ${CC} ${ALL_CFLAGS} \
-			${LDFLAGS} -o $@tmp2 $${BASEOBJS} $@-symtbl.lo \
+			${LDFLAGS} -o $@tmp2 $${BASEOBJS} $@-symtbl.o \
 			$${LIBS0} ${NOSYMLIBS}; \
 			${MKSYMTBL_PROGRAM} ${top_srcdir}/util/mksymtbl.pl \
 			-o $@-symtbl2.c $@tmp2; \
@@ -342,7 +342,7 @@ cleandir: distclean
 superclean: maintainer-clean
 
 clean distclean maintainer-clean::
-	rm -f *.lo *.o *.lo *.la core *.core *-symtbl.c *tmp0 *tmp1 *tmp2
+	rm -f *.o *.o *.lo *.la core *.core *-symtbl.c *tmp0 *tmp1 *tmp2
 	rm -rf .depend .libs
 
 distclean maintainer-clean::
@@ -414,7 +414,7 @@ INSTALL_DATA =		${INSTALL} -m 644
 ### not to exist when not generating documentation.
 ###
 
-XSLTPROC =		/usr/bin/xsltproc --novalid --xinclude --nonet
+XSLTPROC =		xsltproc --novalid --xinclude --nonet
 PERL =			/usr/bin/perl
 LATEX =			/usr/bin/latex
 PDFLATEX =		/usr/bin/pdflatex
@@ -423,7 +423,7 @@ W3M =			w3m
 ###
 ### Script language program used to create internal symbol tables
 ###
-MKSYMTBL_PROGRAM =	
+MKSYMTBL_PROGRAM =	/usr/bin/perl
 
 ###
 ### Switch to create internal symbol table selectively
@@ -473,7 +473,7 @@ ALWAYS_MAKE_SYMTABLE =
 	chmod +x $@
 
 
-version.lo: ${srcdir}/version.c
+version.o: ${srcdir}/version.c
 	${LIBTOOL_MODE_COMPILE} ${CC} ${ALL_CFLAGS} \
 		-DVERSION=\"${VERSION}\" \
 		-DLIBINTERFACE=${LIBINTERFACE} \
@@ -492,15 +492,15 @@ libisccfg-export.la: ${OBJS}
 		-version-info ${LIBINTERFACE}:${LIBREVISION}:${LIBAGE} \
 		${OBJS} ${LIBS} ${DNSLIBS} ${ISCLIBS}
 
-timestamp: libisccfg-export.la
+timestamp: libisccfg-export.a
 	touch timestamp
 
 installdirs:
 	$(SHELL) ${top_srcdir}/mkinstalldirs ${DESTDIR}${export_libdir}
 
 install:: timestamp installdirs
-	${LIBTOOL_MODE_INSTALL} ${INSTALL_PROGRAM} libisccfg-export.la \
+	${LIBTOOL_MODE_INSTALL} ${INSTALL_PROGRAM} libisccfg-export.a \
 	${DESTDIR}${export_libdir}/
 
 clean distclean::
-	rm -f libisccfg-export.la timestamp
+	rm -f libisccfg-export.a timestamp
